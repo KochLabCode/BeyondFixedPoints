@@ -174,8 +174,6 @@ def estimate_eigenvalues(reaction_terms,grid,eigen_threshold=None):
 
 #%%
 
-# set_num_threads(2)
-# @njit(parallel=True)
 def solve_timeseriesRK4(reaction_terms,initial_condition,t_eval,dsigma,stocha=None):
     
     dt=t_eval[1]-t_eval[0]
