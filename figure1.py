@@ -349,38 +349,38 @@ def trapping_time_analytic(ll,ini,fin):
 #%%
         
 # alpha=-0.4 # saddle    
-# # alpha=0.01 # ghost
-
-# para = [alpha]
-
-# def current_model(t,z):
-#     return model_normalform(t, z, para)
-
-# if alpha>0:
-#     xmin=-0.5;xmax=0.5
-#     ymin=-0.5;ymax=0.5
-# elif alpha<0:
-#     # xmin=0.2;xmax=0.7
-#     # ymin=-0.2;ymax=0.2
-#     xmin=0.13;xmax=1.13
-#     ymin=-0.5;ymax=0.5
-
-# xmid=np.round(np.sqrt(abs(alpha)),2)
-# if alpha>0:
-#     xmid=0
-# ymid=0
-
-#%%
-
-alpha=0.1 # ghost
+alpha=0.001 # ghost
 
 para = [alpha]
 
 def current_model(t,z):
-    return model_blackbox(t, z, para)
+    return model_normalform(t, z, para)
 
-xmin=-0.5;xmax=1.5
-ymin=-0.5;ymax=1.5
+if alpha>0:
+    xmin=-0.5;xmax=0.5
+    ymin=-0.5;ymax=0.5
+elif alpha<0:
+    # xmin=0.2;xmax=0.7
+    # ymin=-0.2;ymax=0.2
+    xmin=0.13;xmax=1.13
+    ymin=-0.5;ymax=0.5
+
+xmid=np.round(np.sqrt(abs(alpha)),2)
+if alpha>0:
+    xmid=0
+ymid=0
+
+#%%
+
+# alpha=0.1 # ghost
+
+# para = [alpha]
+
+# def current_model(t,z):
+#     return model_blackbox(t, z, para)
+
+# xmin=-0.5;xmax=1.5
+# ymin=-0.5;ymax=1.5
 
 #%%
 
@@ -396,7 +396,7 @@ ymin=-0.5;ymax=1.5
 
 
 folder_save=os.getcwd()+'svgs\\'
-save_fig=True
+save_fig=None
 
 Ng=101
 x_range=np.linspace(xmin,xmax,Ng)
@@ -439,9 +439,9 @@ Q[Q>=Q_thresh]=np.nan
 tF=500;dt=.01;dsigma=0.0
 t_eval = np.arange(0,tF,dt)
 if alpha>0:
-    # initial_condition = [-0.5,0.2] # normal form moodel
+    initial_condition = [-0.5,0.2] # normal form moodel
     # initial_condition = [1,1] # black box model
-    initial_condition = [0,0.5] # black box model
+    # initial_condition = [0,0.5] # black box model
 elif alpha<0:
     # initial_condition = [0.47,0.2]
     initial_condition = [0.63454,0.5]
@@ -480,15 +480,15 @@ ax.set_xlabel('x',fontsize=15)
 ax.set_ylabel('y',fontsize=15)
 ax.set_xlim(xmin,xmax)
 ax.set_ylim(ymin,ymax)
-# ax.set_xticks([xmin,xmid,xmax])
-# ax.set_yticks([ymin,ymid,ymax])
-# ax.set_xticklabels([xmin,xmid,xmax],fontsize=15)
-# ax.set_yticklabels([ymin,ymid,ymax],fontsize=15)
+ax.set_xticks([xmin,xmid,xmax])
+ax.set_yticks([ymin,ymid,ymax])
+ax.set_xticklabels([xmin,xmid,xmax],fontsize=15)
+ax.set_yticklabels([ymin,ymid,ymax],fontsize=15)
 
 ax.set_title(r'$\lambda_{min}^{s}$')
 ax.axhline(y=0,color='gray',ls='--')
-# if alpha<0:
-#     ax.axvline(x=xmid,color='gray',ls='--')
+if alpha<0:
+    ax.axvline(x=xmid,color='gray',ls='--')
 
 if save_fig:
     plt.savefig('eigen_spectrum_slow_points_alpha(%0.2f)_1.svg' %alpha,bbox_inches=0, transparent=True)
@@ -508,17 +508,17 @@ ax.set_xlabel('x',fontsize=15)
 ax.set_ylabel('y',fontsize=15)
 ax.set_xlim(xmin,xmax)
 ax.set_ylim(ymin,ymax)
-# ax.set_xticks([xmin,xmid,xmax])
-# ax.set_yticks([ymin,ymid,ymax])
-# ax.set_xticklabels([xmin,xmid,xmax],fontsize=15)
-# ax.set_yticklabels([ymin,ymid,ymax],fontsize=15)
+ax.set_xticks([xmin,xmid,xmax])
+ax.set_yticks([ymin,ymid,ymax])
+ax.set_xticklabels([xmin,xmid,xmax],fontsize=15)
+ax.set_yticklabels([ymin,ymid,ymax],fontsize=15)
 
 ax.set_title(r'$\lambda_{max}^{s}$')
 # fig.tight_layout(pad=1.0)
 # ax.set_aspect('auto')   
 ax.axhline(y=0,color='gray',ls='--')
-# if alpha<0:
-#     ax.axvline(x=xmid,color='gray',ls='--')
+if alpha<0:
+    ax.axvline(x=xmid,color='gray',ls='--')
     
 
 
@@ -553,14 +553,14 @@ ax.set_xlabel('x',fontsize=15)
 ax.set_ylabel('y',fontsize=15)
 ax.set_xlim(xmin,xmax)
 ax.set_ylim(ymin,ymax)
-# ax.set_xticks([xmin,xmid,xmax])
-# ax.set_yticks([ymin,ymid,ymax])
-# ax.set_xticklabels([xmin,xmid,xmax],fontsize=15)
-# ax.set_yticklabels([ymin,ymid,ymax],fontsize=15)
+ax.set_xticks([xmin,xmid,xmax])
+ax.set_yticks([ymin,ymid,ymax])
+ax.set_xticklabels([xmin,xmid,xmax],fontsize=15)
+ax.set_yticklabels([ymin,ymid,ymax],fontsize=15)
 
 plt.axhline(y=0,color='gray',ls='--')
-# if alpha<0:
-#     plt.axvline(x=xmid,color='gray',ls='--')
+if alpha<0:
+    plt.axvline(x=xmid,color='gray',ls='--')
     
 ax.set(xlabel='$x$', ylabel='$y$')
 # # ax.set_aspect('auto')  
@@ -590,14 +590,14 @@ ax.set_xlabel('x',fontsize=15)
 ax.set_ylabel('y',fontsize=15)
 ax.set_xlim(xmin,xmax)
 ax.set_ylim(ymin,ymax)
-# ax.set_xticks([xmin,xmid,xmax])
-# ax.set_yticks([ymin,ymid,ymax])
-# ax.set_xticklabels([xmin,xmid,xmax],fontsize=15)
-# ax.set_yticklabels([ymin,ymid,ymax],fontsize=15)
+ax.set_xticks([xmin,xmid,xmax])
+ax.set_yticks([ymin,ymid,ymax])
+ax.set_xticklabels([xmin,xmid,xmax],fontsize=15)
+ax.set_yticklabels([ymin,ymid,ymax],fontsize=15)
 
 plt.axhline(y=0,color='gray',ls='--')
-# if alpha<0:
-#     plt.axvline(x=xmid,color='gray',ls='--')
+if alpha<0:
+    plt.axvline(x=xmid,color='gray',ls='--')
     
 ax.set(xlabel='$x$', ylabel='$y$')
 # # ax.set_aspect('auto')  
@@ -616,16 +616,16 @@ plt.show()
 
 plot_single=None
 
-# # setting initial condition for normal form model
-# if alpha>0:
-#     minX_slow = np.min(np.round(y_range[slow_idx[:,1]],decimals=2))
-#     initial_condition = [1.25*minX_slow,0]
-# elif alpha<0:
-#     maxY_slow = np.max(np.round(y_range[slow_idx[:,0]],decimals=2))
-#     initial_condition = [np.sqrt(-alpha),1.25*maxY_slow]
+# setting initial condition for normal form model
+if alpha>0:
+    minX_slow = np.min(np.round(y_range[slow_idx[:,1]],decimals=2))
+    initial_condition = [1.25*minX_slow,0]
+elif alpha<0:
+    maxY_slow = np.max(np.round(y_range[slow_idx[:,0]],decimals=2))
+    initial_condition = [np.sqrt(-alpha),1.25*maxY_slow]
 
 # setting initial condition for blackbox model
-initial_condition = [1,1] 
+# initial_condition = [1,1] 
 
 # # setting initial condition for nghost model
 # initial_condition = [0,0.5] 
@@ -700,10 +700,7 @@ for dsigma in sigmas:
     Ts.append(T_perSigma)
         
 #%% plot 
-alpha=0.10
-sigmas= np.load('noise intensities_(alpha=%0.2f).npy'%alpha)
-Ts=np.load('trapping time_(alpha=%0.2f).npy'%alpha)
-     
+
 plt.figure()
 plt.subplot(1,1,1)
 # for s in range(len(sigmas)):
@@ -719,8 +716,8 @@ plt.ylabel('total trapping time(a.u.)')
 # plt.savefig('total trapping time_(alpha=%0.2f).svg'%alpha,format='svg',bbox_inches=0, transparent=True)
 plt.show()       
       
-np.save('noise intensities_(alpha=%0.2f)'%alpha,sigmas)
-np.save('trapping time_(alpha=%0.2f)'%alpha,Ts)
+# np.save('noise intensities_(alpha=%0.2f)'%alpha,sigmas)
+# np.save('trapping time_(alpha=%0.2f)'%alpha,Ts)
 
 
 
