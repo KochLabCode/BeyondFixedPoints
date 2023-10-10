@@ -1,0 +1,46 @@
+Int x=0.5, y=0.6, z=0.8
+
+dx1 = 1/4*(tanh(s*(x-0)) - tanh(s*(x-1)))*(tanh(s*(y-0)) - tanh(s*(y-1)))*(tanh(s*(z-0)) - tanh(s*(z-1)))*(r + (x-0.5)^2)
+dy1 = 1/4*(tanh(s*(x-0)) - tanh(s*(x-1)))*(tanh(s*(y-0)) - tanh(s*(y-1)))*(tanh(s*(z-0)) - tanh(s*(z-1)))*(-1*(y-0.5))
+dz1 = 1/4*(tanh(s*(x-0)) - tanh(s*(x-1)))*(tanh(s*(y-0)) - tanh(s*(y-1)))*(tanh(s*(z-0)) - tanh(s*(z-1)))*(-(z-0.5))
+
+dx2 = 1/4*(tanh(s*(x-1)) - tanh(s*(x-2)))*(tanh(s*(y-0)) - tanh(s*(y-1)))*(tanh(s*(z-0)) - tanh(s*(z-1)))*(-1*(x-1.5))
+dy2 = 1/4*(tanh(s*(x-1)) - tanh(s*(x-2)))*(tanh(s*(y-0)) - tanh(s*(y-1)))*(tanh(s*(z-0)) - tanh(s*(z-1)))*(r + (y-0.5)^2)
+dz2 = 1/4*(tanh(s*(x-1)) - tanh(s*(x-2)))*(tanh(s*(y-0)) - tanh(s*(y-1)))*(tanh(s*(z-0)) - tanh(s*(z-1)))*(-(z-0.5))
+
+dx3 = 1/4*(tanh(s*(x-0)) - tanh(s*(x-1)))*(tanh(s*(y-1)) - tanh(s*(y-2)))*(tanh(s*(z-0)) - tanh(s*(z-1)))*(-(1*(x-0.5)))
+dy3 = 1/4*(tanh(s*(x-0)) - tanh(s*(x-1)))*(tanh(s*(y-1)) - tanh(s*(y-2)))*(tanh(s*(z-0)) - tanh(s*(z-1)))*(-(r + (y-1.5)^2))
+dz3 = 1/4*(tanh(s*(x-0)) - tanh(s*(x-1)))*(tanh(s*(y-1)) - tanh(s*(y-2)))*(tanh(s*(z-0)) - tanh(s*(z-1)))*(-(z-0.5))
+
+dx4 = 1/4*(tanh(s*(x-1)) - tanh(s*(x-2)))*(tanh(s*(y-1)) - tanh(s*(y-2)))*(tanh(s*(z-0)) - tanh(s*(z-1)))*(1*(x-1.5))
+dy4 = 1/4*(tanh(s*(x-1)) - tanh(s*(x-2)))*(tanh(s*(y-1)) - tanh(s*(y-2)))*(tanh(s*(z-0)) - tanh(s*(z-1)))*(-ls*(y-1.5))
+dz4 = 1/4*(tanh(s*(x-1)) - tanh(s*(x-2)))*(tanh(s*(y-1)) - tanh(s*(y-2)))*(tanh(s*(z-0)) - tanh(s*(z-1)))*(-(z-0.5))
+
+dx5 = 1/4*(tanh(s*(x-2)) - tanh(s*(x-3)))*(tanh(s*(y-1)) - tanh(s*(y-2)))*(tanh(s*(z-0)) - tanh(s*(z-1)))*(-1*(x-2.5))
+dy5 = 1/4*(tanh(s*(x-2)) - tanh(s*(x-3)))*(tanh(s*(y-1)) - tanh(s*(y-2)))*(tanh(s*(z-0)) - tanh(s*(z-1)))*(r + (y-1.5)^2)
+dz5 = 1/4*(tanh(s*(x-2)) - tanh(s*(x-3)))*(tanh(s*(y-1)) - tanh(s*(y-2)))*(tanh(s*(z-0)) - tanh(s*(z-1)))*(-(z-0.5))
+
+dx6 = 1/4*(tanh(s*(x-1)) - tanh(s*(x-2)))*(tanh(s*(y-2)) - tanh(s*(y-3)))*(tanh(s*(z-0)) - tanh(s*(z-1)))*(-(1*(x-1.5)))
+dy6 = 1/4*(tanh(s*(x-1)) - tanh(s*(x-2)))*(tanh(s*(y-2)) - tanh(s*(y-3)))*(tanh(s*(z-0)) - tanh(s*(z-1)))*(-(r + (y-2.5)^2))
+dz6 = 1/4*(tanh(s*(x-1)) - tanh(s*(x-2)))*(tanh(s*(y-2)) - tanh(s*(y-3)))*(tanh(s*(z-0)) - tanh(s*(z-1)))*(-(z-0.5))
+
+dx7 = 1/4*(tanh(s*(x-2)) - tanh(s*(x-3)))*(tanh(s*(y-2)) - tanh(s*(y-3)))*(tanh(s*(z-0)) - tanh(s*(z-1)))*(-(r + (x-2.5)^2))
+dy7 = 1/4*(tanh(s*(x-2)) - tanh(s*(x-3)))*(tanh(s*(y-2)) - tanh(s*(y-3)))*(tanh(s*(z-0)) - tanh(s*(z-1)))*(-(1*(y-2.5)))
+dz7 = 1/4*(tanh(s*(x-2)) - tanh(s*(x-3)))*(tanh(s*(y-2)) - tanh(s*(y-3)))*(tanh(s*(z-0)) - tanh(s*(z-1)))*(-(z-0.5))
+
+x' = dx1 + dx2 + dx3 + dx4 + dx5 + dx6 + dx7
+y' = dy1 + dy2 + dy3 + dy4 + dy5 + dy6 + dy7
+z' = dz1 + dz2 + dz3 + dz4 + dz5 + dz6 + dz7
+
+param r=1,s=10,ls=1.4
+
+@ meth=cvode,dt=0.1,total=1500,maxstor=100000
+@ xp=x,yp=y,bound=1000000
+@ xlo=0,xhi=3,ylo=0,yhi=3
+​
+# Some AUTO parameters
+@ autovar=x,autoxmin=-0.1,autoymin=0.0,autoxmax=1,autoymax=5
+@ ntst=400,nmax=2500,npr=500,ds=-0.001,dsmin=0.0001,dsmax=0.05
+@ ncol=4,epsl=1e-4,parmin=-0.1,parmax=5,normmin=0,normmax=1000
+@ epsu=1e-4,epss=0.0001
+done
