@@ -79,7 +79,10 @@ alpha=0.01
 input_params=[alpha]
 
 print('estimating quasi-potential landscape. This might take sometime.')
-qpl=QuasiPotentialLandscape(time_point,model_repeller,input_params)
+
+## change the model in the argument to plot potentials of different phase space objects.
+## currently set to simulate ghost manifold using 'model_ghost' function.
+qpl=QuasiPotentialLandscape(time_point,model_ghost,input_params)
 grid_pot,Pt=qpl.find_potential()  
  
 
