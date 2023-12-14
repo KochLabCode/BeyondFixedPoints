@@ -23,7 +23,7 @@ params = {'legend.fontsize': 15,
 pylab.rcParams.update(params)
 
 
-from utils import *
+# from utils import *
 from quasi_potential_landscape import *
 
 def model_ghost(t, z , para):
