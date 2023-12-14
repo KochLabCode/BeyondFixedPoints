@@ -593,6 +593,11 @@ def euklDist_TvP(trj, p):
         
     return EDs
 
+def distanceToPoint(xs, pt):
+    d = np.array([])
+    for i in range(xs.shape[1]):
+        d = np.append(d, np.linalg.norm(xs[:,i]-pt))
+    return d
 
 def euklDist_trajectory(s1,s2, trajectoryType = 'single', mode = 'totalAvg', **kwargs):  
 
@@ -1117,7 +1122,7 @@ def RK4_na_noisy(f,p,ICs,t0,dt,t_end, sigma=0, naFun = None,naFunParams = None):
                 k3 = f(x[i-1,:]+k2/2,t[i-1],p,naFun,naFunParams)*dt
                 k4 = f(x[i-1,:]+k3,t[i-1],p,naFun,naFunParams)*dt
                 x_next = x[i-1,:] + (k1+2*k2+2*k3+k4)/6
-                dW=sigma*np.sqrt(dt)*np.random.normal() # Euler-Maruyama method (https://en.wikipedia.org/wiki/Euler%E2%80%93Maruyama_method)
+                dW=sigma*np.sqrt(dt)*np.random.normal(size=x_next.shape[0]) # Euler-Maruyama method (https://en.wikipedia.org/wiki/Euler%E2%80%93Maruyama_method)
                 x[i,:] = x_next + dW
         else:
             for i in range(1,steps):
@@ -1128,7 +1133,48 @@ def RK4_na_noisy(f,p,ICs,t0,dt,t_end, sigma=0, naFun = None,naFunParams = None):
                 k3 = f(x[i-1,:]+k2/2,t[i-1],p)*dt
                 k4 = f(x[i-1,:]+k3,t[i-1],p)*dt
                 x_next = x[i-1,:] + (k1+2*k2+2*k3+k4)/6
-                dW=sigma*np.sqrt(dt)*np.random.normal() # Euler-Maruyama method (https://en.wikipedia.org/wiki/Euler%E2%80%93Maruyama_method)
+                dW=sigma*np.sqrt(dt)*np.random.normal(size=x_next.shape[0]) # Euler-Maruyama method (https://en.wikipedia.org/wiki/Euler%E2%80%93Maruyama_method)
                 x[i,:] = x_next + dW
             
         return np.vstack((t,x.T))
+    
+
+def RK4_na_noisy_pos(f,p,ICs,t0,dt,t_end, sigma=0, naFun = None,naFunParams = None):     # args: ODE system, parameters, initial conditions, starting time t0, dt, number of steps
+        steps = int((t_end-t0)/dt)
+        x = np.zeros([steps,len(ICs)])
+        t = np.zeros(steps,dtype=float)
+        x[0,:] = ICs
+        t[0] = t0
+        
+        if naFun != None and naFunParams != None:
+            for i in range(1,steps):
+                
+                t[i] = t0 + i*dt
+                # RK4 algorithm
+                k1 = f(x[i-1,:],t[i-1],p,naFun,naFunParams)*dt
+                k2 = f(x[i-1,:]+k1/2,t[i-1],p,naFun,naFunParams)*dt
+                k3 = f(x[i-1,:]+k2/2,t[i-1],p,naFun,naFunParams)*dt
+                k4 = f(x[i-1,:]+k3,t[i-1],p,naFun,naFunParams)*dt
+                x_next = x[i-1,:] + (k1+2*k2+2*k3+k4)/6
+                dW=sigma*np.sqrt(dt)*np.random.normal(size=x_next.shape[0]) # Euler-Maruyama method (https://en.wikipedia.org/wiki/Euler%E2%80%93Maruyama_method)
+                x_ = x_next + dW
+                x_[x_<0] = 0
+                x[i,:] = x_
+        else:
+            for i in range(1,steps):
+                t[i] = t0 + i*dt
+                # RK4 algorithm
+                k1 = f(x[i-1,:],t[i-1],p)*dt
+                k2 = f(x[i-1,:]+k1/2,t[i-1],p)*dt
+                k3 = f(x[i-1,:]+k2/2,t[i-1],p)*dt
+                k4 = f(x[i-1,:]+k3,t[i-1],p)*dt
+                x_next = x[i-1,:] + (k1+2*k2+2*k3+k4)/6
+                dW=sigma*np.sqrt(dt)*np.random.normal(size=x_next.shape[0]) # Euler-Maruyama method (https://en.wikipedia.org/wiki/Euler%E2%80%93Maruyama_method)
+                x_ = x_next + dW
+                x_[x_<0] = 0
+                x[i,:] = x_
+
+        return np.vstack((t,x.T))
+
+def hill(x,K,nH):
+    return x**nH/(x**nH + K**nH)

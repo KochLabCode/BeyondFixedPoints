@@ -34,7 +34,7 @@ timepoints = np.linspace(0, t_end, timesteps+1)
 
 #%% simulation: flow and trajectories
 
-seeds = [3,5]
+seeds = [2,5]
 
 fileNames = ['data\\simdat_HC4_6ICs_s5e-3.npy','data\\simdat_HC4_6ICs_s5e-2.npy']
 
@@ -64,6 +64,8 @@ for i in range(2):
 
 simDat_loNoise = np.load('data\\simdat_HC4_6ICs_s5e-3.npy')
 simDat_hiNoise = np.load('data\\simdat_HC4_6ICs_s5e-2.npy')
+
+
 
 norm = plt.Normalize(0,8)
 cmap=cm.get_cmap('RdPu_r')
@@ -173,7 +175,7 @@ for i in range(len(idcs)):
     ax.set_xlabel('x',fontsize=10);plt.ylabel('y',fontsize=10)
     for ic in range(5):
         col = np.asarray(cmap(norm(ic))[0:3])
-        for ii in range(nruns):
+        for ii in range(3):
             ax.plot(simulations[0,idx,ic,ii,1,:],simulations[0,idx,ic,ii,2,:],lw=0.5,color=col)
             ax.scatter(simulations[0,idx,ic,ii,1,0],simulations[0,idx,ic,ii,2,0],marker='o',color=col,s=30,edgecolors='black')
 
@@ -191,7 +193,7 @@ for i in range(len(idcs)):
     plt.xlabel('time (a.u.)',fontsize=10);plt.ylabel('x',fontsize=10) 
     for ic in range(5):
         col = np.asarray(cmap(norm(ic))[0:3])
-        for ii in range(nruns):
+        for ii in range(3):
             ax.plot(simulations[0,idx,ic,ii,0,:],simulations[0,idx,ic,ii,1,:],color=col,lw=0.5)
     
     ax.set_box_aspect(1/2)
@@ -363,7 +365,7 @@ for i in range(len(idcs)):
     ax.set_xlabel('x',fontsize=10);plt.ylabel('y',fontsize=10)
     for ic in range(5):
         col = np.asarray(cmap(norm(ic))[0:3])
-        for ii in range(nruns):
+        for ii in range(3):
             ax.plot(simulations[idx,ic,ii,1,:],simulations[idx,ic,ii,2,:],lw=0.5,color=col)
             ax.scatter(simulations[idx,ic,ii,1,0],simulations[idx,ic,ii,2,0],marker='o',color=col,s=30,edgecolors='black')
 
@@ -382,7 +384,7 @@ for i in range(len(idcs)):
     plt.xlabel('time (a.u.)',fontsize=10);plt.ylabel('x',fontsize=10) 
     for ic in range(5):
         col = np.asarray(cmap(norm(ic))[0:3])
-        for ii in range(nruns):
+        for ii in range(3):
             ax.plot(simulations[idx,ic,ii,0,:],simulations[idx,ic,ii,1,:],color=col,lw=0.7)
     
     ax.set_box_aspect(1/2)
@@ -469,8 +471,8 @@ for i in range(len(sigma)):
     EDsGC.append(ED)
     SDsGC.append(SD)
 
-
-myFig = plt.figure(figsize=(8*inCm,7*inCm))
+#%%
+myFig = plt.figure(figsize=(7.5*inCm,5.75*inCm))
 for iii in [0]: 
     plt.errorbar(sigma,EDsSHC[iii],yerr=SDsSHC[iii]/np.sqrt(nruns*5/2),fmt='-ok',ms=4,capsize=3,label='heteroclinic channel',lw=1)
 plt.errorbar(sigma,EDsGC,yerr=SDsGC/np.sqrt(5*nruns/2),fmt=':sk',mfc='w',mec='k',ecolor='k',ms=4,capsize=3,label='ghost channel',lw=1)

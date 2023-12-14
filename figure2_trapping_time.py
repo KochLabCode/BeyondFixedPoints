@@ -67,10 +67,10 @@ def jac_sn(x1,x2):
 # In[35]:
 
 
-def tan_inv(x,xinit,xfin):
+def tan_inv(x,xinit,xfin):    #for ghost
     y =(1/(np.sqrt(0.01)))*(np.arctan((xfin)/np.sqrt(0.01))-np.arctan((xinit)/np.sqrt(0.01))) 
     return y
-def log_inv(x,xinit,xfin):
+def log_inv(x,xinit,xfin):    #for saddle
     y =(1/(2*np.sqrt(0.4)))*(np.log(np.abs(xfin-np.sqrt(0.4))/(xfin + np.sqrt(0.4)))-np.log(np.abs(xinit-np.sqrt(0.4))/(xinit + np.sqrt(0.4)))) 
     return y
 
@@ -170,7 +170,7 @@ t_trap_final2  =[]
 eig_list_final2=[]
 
 jac=jac_sn
-width         = 0.01
+width         = 0.01               #grid length
 init_list     =[]
 t_trap_theory=[]
 eig_trap_theory=[]
