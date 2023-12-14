@@ -12,19 +12,31 @@ import scipy
 import matplotlib.pylab as pylab
 import matplotlib
 import matplotlib.colors as colors
-
+import numdifftools as nd
+import warnings
+warnings.filterwarnings("ignore")
 import cv2
 params = {'legend.fontsize': 15,
           'axes.labelsize': 20,
           'axes.labelpad' : 15,
           'axes.titlesize':20,
-          'xtick.labelsize':20,
-          'ytick.labelsize':20,
+          'xtick.minor.size': 3,
+          'xtick.major.width': 2.15,
+          'xtick.minor.width': 1.25,
+          'ytick.major.size': 10,
+          'ytick.minor.size': 3,
+          'ytick.major.width': 2.15,
+          'ytick.minor.width': 1.25,
+          'xtick.labelsize': 20,
+          'ytick.labelsize': 20,
+          'xtick.major.size':10,
            'text.usetex': False,
            'font.family': 'stixgeneral',
            'mathtext.fontset': 'stix',
+           'axes.linewidth': 2,
           
           }
+
 
 pylab.rcParams.update(params)
 import os
@@ -174,9 +186,14 @@ def estimate_eigenvalues(reaction_terms,grid,eigen_threshold=None):
 
 #%%
 
-def solve_timeseriesRK4(reaction_terms,initial_condition,t_eval,dsigma,stocha=None):
+# set_num_threads(2)
+# @njit(parallel=True)
+def solve_timeseriesRK4(reaction_terms,initial_condition,t_eval,dsigma,stocha=None,backwards=None):
     
     dt=t_eval[1]-t_eval[0]
+    
+    if backwards==True:
+        dt=-dt
     
     ic=initial_condition
     N=len(initial_condition)
@@ -195,11 +212,37 @@ def solve_timeseriesRK4(reaction_terms,initial_condition,t_eval,dsigma,stocha=No
         
         kav=(k1+2*k2+2*k3+k4)/6
 
-        dW=dsigma*np.sqrt(dt)*np.array([np.random.normal() for k in range(N)])
+        dW=dsigma*np.sqrt(abs(dt))*np.array([np.random.normal() for k in range(N)])
         # dW=0
         zcurr=zprev+dt*kav+dW # Euler-Maruyama method (https://en.wikipedia.org/wiki/Euler%E2%80%93Maruyama_method)
            
         Zs[:,n]=zcurr
+    
+    try:
+        Zs_prod=np.array([Zs[i]*Zs[i+1] for i in range(len(initial_condition)-1)])
+        nan_idxs=np.where(np.isnan(Zs_prod[0]))[0]
+        infplus_idxs=np.where(Zs_prod[0]>1000)[0]
+        infminus_idxs=np.where(Zs_prod[0]<-1000)[0]
+        
+        if len(nan_idxs)>0:
+            nan_min_indx=np.min(nan_idxs)
+        else:
+            nan_min_indx=np.inf
+            
+        if len(infplus_idxs)>0:
+            infplus_min_indx=np.min(infplus_idxs)
+        else:
+            infplus_min_indx=np.inf
+            
+        if len(infminus_idxs)>0:
+            infminus_min_indx=np.min(infminus_idxs)
+        else:
+            infminus_min_indx=np.inf
+            
+        min_idx=np.min([nan_min_indx,infplus_min_indx,infminus_min_indx])
+        Zs=Zs[:,:int(min_idx)]
+    except:
+        pass
         
     return Zs
 
@@ -349,7 +392,7 @@ def trapping_time_analytic(ll,ini,fin):
 #%%
         
 # alpha=-0.4 # saddle    
-alpha=0.001 # ghost
+alpha=0.01 # ghost
 
 para = [alpha]
 
@@ -360,9 +403,8 @@ if alpha>0:
     xmin=-0.5;xmax=0.5
     ymin=-0.5;ymax=0.5
 elif alpha<0:
-    # xmin=0.2;xmax=0.7
-    # ymin=-0.2;ymax=0.2
     xmin=0.13;xmax=1.13
+    # xmin=-1.13;xmax=-0.13
     ymin=-0.5;ymax=0.5
 
 xmid=np.round(np.sqrt(abs(alpha)),2)
@@ -433,6 +475,19 @@ Q_binary[Q>=Q_thresh]=1
 Q_binary[Q<Q_thresh]=0
 Q[Q>=Q_thresh]=np.nan
 
+# defining slowpoint
+sp=np.array([Xg[np.where(Q_ov==np.min(Q_ov))][0],Yg[np.where(Q_ov==np.min(Q_ov))][0]])
+
+# sometimes finding slowpoint as the minimus of Q might not be accurate bacause of
+# spatial binning. It is recomended to provide with the coordinates of slowpoint manually. 
+
+
+xmid=sp[0].round(3)
+ymid=sp[1].round(3)
+
+fun = lambda z: current_model(0, z)
+jac = nd.Jacobian(fun)(sp)
+eig_values, eig_vectors=np.linalg.eig(jac)
 
 #%%
 
@@ -476,19 +531,19 @@ im1=ax.imshow(Eigen_min_slow,cmap=cm,origin='lower',extent=[xmin,xmax,ymin,ymax]
 ax.streamplot(Xg,Yg,U,V,density=1,color=[0.5,0.5,0.5,0.75],arrowsize=1.5)
 # plt.colorbar(im1,ax=ax1,fraction=0.05)
 # im2.set_alpha(0.5)
-ax.set_xlabel('x',fontsize=15)
-ax.set_ylabel('y',fontsize=15)
+ax.set_xlabel('x')
+ax.set_ylabel('y')
 ax.set_xlim(xmin,xmax)
 ax.set_ylim(ymin,ymax)
 ax.set_xticks([xmin,xmid,xmax])
 ax.set_yticks([ymin,ymid,ymax])
-ax.set_xticklabels([xmin,xmid,xmax],fontsize=15)
-ax.set_yticklabels([ymin,ymid,ymax],fontsize=15)
+ax.set_xticklabels([xmin,xmid,xmax])
+ax.set_yticklabels([ymin,ymid,ymax])
 
 ax.set_title(r'$\lambda_{min}^{s}$')
 ax.axhline(y=0,color='gray',ls='--')
 if alpha<0:
-    ax.axvline(x=xmid,color='gray',ls='--')
+    ax.axvline(x=sp[0],color='gray',ls='--')
 
 if save_fig:
     plt.savefig('eigen_spectrum_slow_points_alpha(%0.2f)_1.svg' %alpha,bbox_inches=0, transparent=True)
@@ -504,21 +559,21 @@ ax.streamplot(Xg,Yg,U,V,density=1,color=[0.5,0.5,0.5,0.75],arrowsize=1.5)
 
 # ax2.plot(x[0],y[0],'o',ms=5.0,color='g')
 # im2.set_alpha(0.5)
-ax.set_xlabel('x',fontsize=15)
-ax.set_ylabel('y',fontsize=15)
+ax.set_xlabel('x')
+ax.set_ylabel('y')
 ax.set_xlim(xmin,xmax)
 ax.set_ylim(ymin,ymax)
 ax.set_xticks([xmin,xmid,xmax])
 ax.set_yticks([ymin,ymid,ymax])
-ax.set_xticklabels([xmin,xmid,xmax],fontsize=15)
-ax.set_yticklabels([ymin,ymid,ymax],fontsize=15)
+ax.set_xticklabels([xmin,xmid,xmax])
+ax.set_yticklabels([ymin,ymid,ymax])
 
 ax.set_title(r'$\lambda_{max}^{s}$')
 # fig.tight_layout(pad=1.0)
 # ax.set_aspect('auto')   
 ax.axhline(y=0,color='gray',ls='--')
-if alpha<0:
-    ax.axvline(x=xmid,color='gray',ls='--')
+# if alpha<0:
+#     ax.axvline(x=xmid,color='gray',ls='--')
     
 
 
@@ -549,18 +604,18 @@ im2=ax.imshow(Q_ov,cmap='gnuplot2_r',origin='lower',extent=[xmin,xmax,ymin,ymax]
 
 # im2.set_alpha(0.25)
 
-ax.set_xlabel('x',fontsize=15)
-ax.set_ylabel('y',fontsize=15)
+ax.set_xlabel('x')
+ax.set_ylabel('y')
 ax.set_xlim(xmin,xmax)
 ax.set_ylim(ymin,ymax)
 ax.set_xticks([xmin,xmid,xmax])
 ax.set_yticks([ymin,ymid,ymax])
-ax.set_xticklabels([xmin,xmid,xmax],fontsize=15)
-ax.set_yticklabels([ymin,ymid,ymax],fontsize=15)
+ax.set_xticklabels([xmin,xmid,xmax])
+ax.set_yticklabels([ymin,ymid,ymax])
 
 plt.axhline(y=0,color='gray',ls='--')
 if alpha<0:
-    plt.axvline(x=xmid,color='gray',ls='--')
+    plt.axvline(x=sp[0],color='gray',ls='--')
     
 ax.set(xlabel='$x$', ylabel='$y$')
 # # ax.set_aspect('auto')  
@@ -576,35 +631,251 @@ aaidx=(boundary_idx[:,0],boundary_idx[:,1])
 Q_boundary=np.zeros(np.shape(Q))
 Q_boundary[aaidx]=10
 
-fig, ax = plt.subplots(figsize=(n*8.6*inCm,n*inCm))
-# ax.scatter(Xg[min_idx],Yg[min_idx],marker='o',s=100,color='black',edgecolors='black',alpha=1)
+# fig, ax = plt.subplots(figsize=(n*8.6*inCm,n*inCm))
+# # ax.scatter(Xg[min_idx],Yg[min_idx],marker='o',s=100,color='black',edgecolors='black',alpha=1)
+# ax.plot(x,y,'-',lw=4.0,color='g')
+# ax.streamplot(Xg,Yg,U,V,density=1,color=[0.5,0.5,0.5,0.75],arrowsize=1.5)
+# im2=ax.imshow(Q_boundary,cmap='binary',origin='lower',extent=[xmin,xmax,ymin,ymax],vmin=0,vmax=1,interpolation=None,alpha=1)
+
+# # ax.plot(x[0],y[0],'o',ms=5.0,color='g')
+
+# # im2.set_alpha(0.25)
+
+# ax.set_xlabel('x',fontsize=15)
+# ax.set_ylabel('y',fontsize=15)
+# ax.set_xlim(xmin,xmax)
+# ax.set_ylim(ymin,ymax)
+# ax.set_xticks([xmin,xmid,xmax])
+# ax.set_yticks([ymin,ymid,ymax])
+# ax.set_xticklabels([xmin,xmid,xmax])
+# ax.set_yticklabels([ymin,ymid,ymax])
+
+# plt.axhline(y=0,color='gray',ls='--')
+# if alpha<0:
+#     plt.axvline(x=sp[0],color='gray',ls='--')
+    
+# ax.set(xlabel='$x$', ylabel='$y$')
+# # # ax.set_aspect('auto')  
+# # plt.title(r'$Q_{thresh}=%.4f$'%Q_thresh) 
+
+# if save_fig:
+#     plt.savefig('Qvalues_w boundary_alpha(%0.2f).svg' %alpha,bbox_inches=0, transparent=True)
+
+# plt.show()
+
+
+
+#%% Stable, unstable and ghost manifold identification
+
+tF=50;dt=.01;dsigma=0.0 
+t_eval = np.arange(0,tF,dt)
+
+
+eps=0.01
+
+Stable_manifolds=[]
+Unstable_manifolds=[]
+SGhost_manifolds=[]
+
+for i in range(2): ## scan along different directions (here two directions)
+    
+    ## choose two initial conditions along the eigensubspace    
+    initial_condition1 = sp+eps*eig_vectors[:,i]
+    initial_condition2 = sp-eps*eig_vectors[:,i]
+    
+    ## integrating forward    
+    Zs1=solve_timeseriesRK4(current_model,initial_condition1,t_eval,dsigma,para,backwards=None)
+    Zs2=solve_timeseriesRK4(current_model,initial_condition2,t_eval,dsigma,para,backwards=None)
+    
+    
+
+    
+    ## initial distance of the trajectories to the slowpoint
+    ini_dist=np.linalg.norm(eps*eig_vectors[:,i]).round(3)
+    
+    ## timeseries of distance when integrated forward
+    dist_series1=np.sqrt(np.sum((Zs1.T-sp)**2,axis=1))
+    dist_series2=np.sqrt(np.sum((Zs2.T-sp)**2,axis=1))
+    fin_dist1=np.linalg.norm(Zs1[:,-1]-sp).round(3) # distance of sp to final state
+    fin_dist2=np.linalg.norm(Zs2[:,-1]-sp).round(3) # distance of sp to final state
+    
+    mid_dist1=np.min(dist_series1).round(3) # minimum distance of the trajectory to sp
+    mid_dist2=np.min(dist_series2).round(3) # minimum distance of the trajectory to sp
+    
+    ## for stable manifold of a hyperbolic saddle. In contrast to the  stable manifold of an
+    ## attractor, the trajectories often diverge from the vicinity of the saddle.
+    if (mid_dist1<ini_dist<fin_dist1 and mid_dist2<ini_dist<fin_dist2):
+        
+        ## integrating backwards
+        Zs1_new=solve_timeseriesRK4(current_model,initial_condition1,t_eval,dsigma,para,backwards=True)
+        Zs2_new=solve_timeseriesRK4(current_model,initial_condition2,t_eval,dsigma,para,backwards=True)
+        
+        
+        # myFig = plt.figure()
+        # ax =  myFig.add_subplot(1,1,1)
+        # ax.streamplot(Xg,Yg,U,V,density=1,color=[0.5,0.5,0.5,0.75],arrowsize=1.5)
+        # ax.plot(Zs1_new[0],Zs1_new[1],'-',color='k',lw=3.0)    
+        # ax.plot(Zs2_new[0],Zs2_new[1],'-',color='k',lw=3.0)    
+        # ax.set_xlim(xmin,xmax)
+        # ax.set_ylim(ymin,ymax)
+        # ax.set_xticks([xmin,sp[0],xmax])
+        # ax.set_yticks([ymin,sp[1],ymax])
+        # ax.set_xticklabels([xmin,sp[0],xmax],fontsize=15)
+        # ax.set_yticklabels([ymin,sp[1],ymax],fontsize=15)   
+        # plt.axhline(y=sp[1],color='gray',ls='--')
+        # plt.axvline(x=sp[0],color='gray',ls='--')        
+        # ax.set(xlabel='$x$', ylabel='$y$')   
+        # plt.show()
+            
+        
+        stable_mani_dummy=np.concatenate((Zs1_new,Zs2_new),axis=1)
+        # stable_mani=np.sort(stable_mani_dummy,axis=1)        
+        # Stable_manifolds.append(stable_mani_dummy)
+        
+        Stable_manifolds.append(Zs1_new)
+        Stable_manifolds.append(Zs2_new)
+        
+    ## for stable manifold of an attractor
+    elif (fin_dist1<ini_dist and fin_dist2<ini_dist): # hallmark of attraction around stable attractor
+        
+        ## sometimes when the grid spacing is not fine enough, the initial condition might not be
+        ## exact with high precision. This might create issues with backwards integration not along 
+        ## the desired direction.
+        initial_condition1_new=Zs1[:,-1]+eps*eig_vectors[:,i] # this ensures the new trajs are from the steady stste
+        initial_condition2_new=Zs2[:,-1]-eps*eig_vectors[:,i]
+        ## integrating backwards
+        Zs1_new=solve_timeseriesRK4(current_model,initial_condition1_new,t_eval,dsigma,para,backwards=True)
+        Zs2_new=solve_timeseriesRK4(current_model,initial_condition2_new,t_eval,dsigma,para,backwards=True)
+        
+        stable_mani_dummy=np.concatenate((Zs1_new,Zs2_new),axis=1)
+        # stable_mani=np.sort(stable_mani_dummy,axis=1)        
+        # Stable_manifolds.append(stable_mani)
+        
+        Stable_manifolds.append(Zs1_new)
+        Stable_manifolds.append(Zs2_new)
+        
+    
+    ## for unstable manifold
+    elif fin_dist1>mid_dist1==ini_dist and fin_dist2>mid_dist2==ini_dist:
+        unstable_mani_dummy=np.concatenate((Zs1,Zs2),axis=1)
+        # unstable_mani=np.sort(unstable_mani_dummy,axis=1)
+        Unstable_manifolds.append(unstable_mani_dummy)
+    
+    ## for ghost manifold
+    elif (mid_dist1<ini_dist<fin_dist1 and fin_dist2>mid_dist2==ini_dist) or (fin_dist1>mid_dist1==ini_dist and mid_dist2<ini_dist<fin_dist2):
+        
+        ## finding perpendicular line from which the initial conditions are initiated
+        ghost_idx=np.argwhere(np.isclose(eig_values,0,atol=1e-1)==True)[0][0]
+        ghost_eigv=eig_vectors[:,ghost_idx]
+        # finding a vector perpendicular to the ghost eigenvector by rotating
+        # the ghost eigen vector by 90 degrees.
+        vector_per=ghost_eigv.copy()
+        vector_per[0]=-ghost_eigv[1]
+        vector_per[1]=ghost_eigv[0]
+        
+        dist_plane=-0.5 # determines the distance and orientation of the perpendicular line w.r.t the slow point
+        [xp,yp]=sp+dist_plane*ghost_eigv
+        
+        # defininf the line with width delta
+        delta=0.1
+        xline=np.linspace(xp-delta,xp+delta,10)
+        
+        # inorder to find the equation for the perpendicular line, one needs to find the slope of the line.
+        # this step requires division by vector_per[0]. When the ghost manifold is x axis (vector_per[0]=ghost_eigv[1]=0).
+        # the condition below avoids this situation.
+        if np.isclose(vector_per[0],0): 
+            yline=np.linspace(yp-delta,yp+delta,10)
+            xline=xp*np.ones(len(yline))
+        else:
+            mp=vector_per[1]/vector_per[0]
+            line_per= lambda x: mp*(x-xp)+yp  
+            yline=line_per(xline)
+        
+        # collecting all solutions from the perpendicular line
+        Sols=[]
+        for n in range(len(xline)):
+
+            initial_condition = [xline[n],yline[n]]
+            Zs_test=solve_timeseriesRK4(current_model,initial_condition,t_eval,dsigma,para,backwards=None)
+            
+            if n==0:
+                lmin=len(Zs_test[0])
+            
+            ax.plot(Zs_test[0],Zs_test[1],'-',color='r',lw=0.5)  
+            Sols.append(Zs_test)
+            if len(Zs_test[0])<lmin:
+                lmin=len(Zs_test[0])
+        
+        
+        Dists=[]
+        ref_traj=Sols[0][:,:lmin]
+        # Dists=np.zeros(())
+        for n in range(1,len(Sols)):
+            Zs=Sols[n][:,:lmin]
+            dist=np.sqrt(np.sum((Zs-ref_traj)**2,axis=0))
+            Dists.append(dist)
+            
+        Dists=np.reshape(Dists,(len(Sols)-1,lmin))
+        Dists_max=np.max(Dists,axis=0)
+
+        # funnel_idx=np.min(np.where(Dists_max<0.001)[0]) # nghost
+        funnel_idx=np.min(np.where(Dists_max<0.2)[0]) # nghost
+        
+        Sols_cropped=[Sols[n][:,funnel_idx:] for n in range(len(Sols))]
+        
+        ## cropping the manifold to make it look symmteric around sp
+        ghost_manifold=Sols_cropped[int(len(xline)/2)]
+        dist_to_sp=np.sqrt(np.sum((ghost_manifold.T-sp)**2,axis=1))
+        end_idx=np.min(np.where(dist_to_sp>dist_to_sp[0])[0])
+        
+        SGhost_manifolds.append(ghost_manifold[:,:end_idx])
+
+#%% plortting identified manifolds (stable/unstable/ghost) around the slow point
+ 
+myFig = plt.figure()
+ax =  myFig.add_subplot(1,1,1)
+ax.imshow(Q_boundary,cmap='binary',origin='lower',extent=[xmin,xmax,ymin,ymax],vmin=0,vmax=1,interpolation=None,alpha=1)
 ax.plot(x,y,'-',lw=4.0,color='g')
-ax.streamplot(Xg,Yg,U,V,density=1,color=[0.5,0.5,0.5,0.75],arrowsize=1.5)
-im2=ax.imshow(Q_boundary,cmap='binary',origin='lower',extent=[xmin,xmax,ymin,ymax],vmin=0,vmax=1,interpolation=None,alpha=1)
+# plt.arrow(fp[0],fp[1], scale_arrow*eig_vectors[0][0],scale_arrow*eig_vectors[0][1], width = width_arrow)
+# plt.arrow(fp[0],fp[1], scale_arrow*eig_vectors[1][0],scale_arrow*eig_vectors[1][1], width = width_arrow)
 
-# ax.plot(x[0],y[0],'o',ms=5.0,color='g')
 
-# im2.set_alpha(0.25)
+for i in range(len(SGhost_manifolds)):
+    ghost_manifold=SGhost_manifolds[i]
+    ax.plot(ghost_manifold[0],ghost_manifold[1],'-',color='cyan',lw=5.0, label=r'$W^{g}$')
 
-ax.set_xlabel('x',fontsize=15)
-ax.set_ylabel('y',fontsize=15)
+# if len(SGhost_manifolds)==0:
+for i in range(len(Stable_manifolds)):
+    stable_mani=Stable_manifolds[i]
+    ax.plot(stable_mani[0],stable_mani[1],'-',color='k',lw=5.0, label=r'$W^{s}$')
+    # ax.scatter(stable_mani[0],stable_mani[1],marker='.')
+for i in range(len(Unstable_manifolds)):
+    unstable_mani=Unstable_manifolds[i]
+    ax.plot(unstable_mani[0],unstable_mani[1],'-',color='r',lw=5.0, label=r'$W^{u}$')    
+
+# scale_arrow=5
+# eig_vec1 = scale_arrow*eig_vectors[:,0]
+# eig_vec2 = scale_arrow*eig_vectors[:,1]
+# plt.quiver(*sp, *eig_vec1, color=['r'], scale=21)
+# plt.quiver(*sp, *eig_vec2, color=['g'], scale=21)
+        
+
 ax.set_xlim(xmin,xmax)
 ax.set_ylim(ymin,ymax)
 ax.set_xticks([xmin,xmid,xmax])
 ax.set_yticks([ymin,ymid,ymax])
-ax.set_xticklabels([xmin,xmid,xmax],fontsize=15)
-ax.set_yticklabels([ymin,ymid,ymax],fontsize=15)
+ax.set_xticklabels([xmin,xmid,xmax])
+ax.set_yticklabels([ymin,ymid,ymax])
 
-plt.axhline(y=0,color='gray',ls='--')
-if alpha<0:
-    plt.axvline(x=xmid,color='gray',ls='--')
+plt.axhline(y=sp[1],color='gray',ls='--')
+plt.axvline(x=sp[0],color='gray',ls='--')
     
 ax.set(xlabel='$x$', ylabel='$y$')
 # # ax.set_aspect('auto')  
 # plt.title(r'$Q_{thresh}=%.4f$'%Q_thresh) 
-
+plt.legend()
 if save_fig:
-    plt.savefig('Qvalues_w boundary_alpha(%0.2f).svg' %alpha,bbox_inches=0, transparent=True)
+    plt.savefig('w manifolds_alpha(%0.2f).svg' %alpha,bbox_inches=0, transparent=True)
 
 plt.show()
 
@@ -612,20 +883,20 @@ plt.show()
 
 #%%
 
-
+"""
 
 plot_single=None
 
-# setting initial condition for normal form model
-if alpha>0:
-    minX_slow = np.min(np.round(y_range[slow_idx[:,1]],decimals=2))
-    initial_condition = [1.25*minX_slow,0]
-elif alpha<0:
-    maxY_slow = np.max(np.round(y_range[slow_idx[:,0]],decimals=2))
-    initial_condition = [np.sqrt(-alpha),1.25*maxY_slow]
+# # setting initial condition for normal form model
+# if alpha>0:
+#     minX_slow = np.min(np.round(y_range[slow_idx[:,1]],decimals=2))
+#     initial_condition = [1.25*minX_slow,0]
+# elif alpha<0:
+#     maxY_slow = np.max(np.round(y_range[slow_idx[:,0]],decimals=2))
+#     initial_condition = [np.sqrt(-alpha),1.25*maxY_slow]
 
 # setting initial condition for blackbox model
-# initial_condition = [1,1] 
+initial_condition = [1,1] 
 
 # # setting initial condition for nghost model
 # initial_condition = [0,0.5] 
@@ -700,7 +971,10 @@ for dsigma in sigmas:
     Ts.append(T_perSigma)
         
 #%% plot 
-
+alpha=0.10
+# sigmas= np.load('noise intensities_(alpha=%0.2f).npy'%alpha)
+# Ts=np.load('trapping time_(alpha=%0.2f).npy'%alpha)
+     
 plt.figure()
 plt.subplot(1,1,1)
 # for s in range(len(sigmas)):
@@ -735,3 +1009,4 @@ plt.show()
 # # plt.savefig('total trapping time_(alpha=%0.2f).svg'%alpha,format='svg',bbox_inches=0, transparent=True)
 # plt.show()   
 
+"""
