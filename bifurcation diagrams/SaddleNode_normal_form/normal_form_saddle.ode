@@ -1,0 +1,18 @@
+int x=-1,y=0.5583
+
+dx/dt=a+x^2
+dy/dt=-y
+
+param a=-1
+
+
+@ meth=cvode,dt=0.01,total=1500,maxstor=100000
+@ xp=t,bound=1000000
+@ xlo=0,xhi=100,ylo=0,yhi=4
+​
+# Some AUTO parameters
+@ autovar=x,autoxmin=-1,autoymin=-1,autoxmax=1,autoymax=1
+@ ntst=400,nmax=500,npr=1000,ds=0.001,dsmin=0.0001,dsmax=0.01
+@ ncol=4,epsl=1e-4,parmin=-1,parmax=1,normmin=0,normmax=1000
+@ epsu=1e-4,epss=0.0001
+done

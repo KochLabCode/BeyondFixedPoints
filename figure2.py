@@ -456,7 +456,7 @@ if alpha>0:
 elif alpha<0:
     initial_condition = [0.63454,0.5]
     
-Zs=solve_timeseriesRK4(current_model,initial_condition,t_eval,dsigma,para)
+Zs=solve_timeseriesRK4(current_model,initial_condition,t_eval,dsigma)
 
 x=Zs[0];y=Zs[1]
 
@@ -469,11 +469,13 @@ nfig=10
 ## for colorbar clipping
 qmin=0;qmax=1e-2
 
-fig, ax = plt.subplots(figsize=(nfig*8.6*inCm,nfig*inCm))
+# fig, ax = plt.subplots(figsize=(nfig*8.6*inCm,nfig*inCm))
+fig, ax = plt.subplots(figsize=(5,5))
 ax.streamplot(Xg,Yg,U,V,density=1,color=[0.1,0.1,0.1,0.25],arrowsize=1.5)
 im2=ax.imshow(Q_ov,cmap='gnuplot2_r',origin='lower',extent=[xmin,xmax,ymin,ymax],vmin=qmin, vmax=qmax
               ,interpolation=None,alpha=0.5)
 cbar = fig.colorbar(im2, ticks=[qmin,qmax], orientation='vertical',fraction=0.02)
+cbar.set_label(label=r'Q',rotation='horizontal')
 ax.set_xlabel('x')
 ax.set_ylabel('y')
 ax.set_xlim(xmin,xmax)
@@ -486,6 +488,7 @@ ax.set_title(r'$\alpha \rightarrow 0^+$')
 if alpha<0:
     ax.set_title(r'$\alpha < 0$')
 ax.set(xlabel='$x$', ylabel='$y$')
+plt.tight_layout()
 plt.show()
 
 
@@ -507,11 +510,12 @@ eig_thresh=0.5
 
 #%% plotting maximum and minimum of eigenvalues  
      
-fig, ax = plt.subplots(figsize=(nfig*8.6*inCm,nfig*inCm))
+# fig, ax = plt.subplots(figsize=(nfig*8.6*inCm,nfig*inCm))
+fig, ax = plt.subplots(figsize=(5,5))
 cm = plt.cm.get_cmap('RdYlBu')
 im=ax.imshow(Eigen_max_slow,cmap=cm,origin='lower',extent=[xmin,xmax,ymin,ymax],vmin=-eig_thresh,vmax=eig_thresh,interpolation=None)
 ax.streamplot(Xg,Yg,U,V,density=1,color=[0.5,0.5,0.5,0.5],arrowsize=1.5)
-cbar = fig.colorbar(im, ticks=[-eig_thresh,eig_thresh], orientation='vertical',fraction=0.02, pad=0.01)
+cbar = fig.colorbar(im, ticks=[-eig_thresh,eig_thresh], orientation='vertical',fraction=0.02, pad=0.1)
 cbar.set_label(label=r'$\lambda_{max}^{sp}$',rotation='horizontal')
 ax.plot(x,y,'-',lw=4.0,color='pink')
 ax.set_xlabel('x')
@@ -525,14 +529,16 @@ ax.set_yticklabels([ymin,ymid,ymax])
 ax.set_title(r'$\alpha \rightarrow 0^+$')   
 if alpha<0:
     ax.set_title(r'$\alpha < 0$')
+plt.tight_layout()
 plt.show()
 
 #%%
-fig, ax = plt.subplots(figsize=(nfig*8.6*inCm,nfig*inCm))
+# fig, ax = plt.subplots(figsize=(nfig*8.6*inCm,nfig*inCm))
+fig, ax = plt.subplots(figsize=(5,5))
 cm = plt.cm.get_cmap('RdYlBu')
 im=ax.imshow(Eigen_min_slow,cmap=cm,origin='lower',extent=[xmin,xmax,ymin,ymax],vmin=-eig_thresh,vmax=eig_thresh,interpolation=None)
 ax.streamplot(Xg,Yg,U,V,density=1,color=[0.5,0.5,0.5,0.75],arrowsize=1.5)
-cbar = fig.colorbar(im, ticks=[-eig_thresh,eig_thresh], orientation='vertical',fraction=0.02, pad=0.01)
+cbar = fig.colorbar(im, ticks=[-eig_thresh,eig_thresh], orientation='vertical',fraction=0.02, pad=0.1)
 cbar.set_label(label=r'$\lambda_{min}^{sp}$',rotation='horizontal')
 ax.set_xlabel('x')
 ax.set_ylabel('y')
@@ -545,33 +551,28 @@ ax.set_yticklabels([ymin,ymid,ymax])
 ax.set_title(r'$\alpha \rightarrow 0^+$')
 if alpha<0:
     ax.set_title(r'$\alpha < 0$')
+plt.tight_layout()
 plt.show()
 
 
 
 #%%
 
-"""
+print('estimating system response to different noise levels. Figure 2c')
 
 plot_single=None
 
-# # setting initial condition for normal form model
-# if alpha>0:
-#     minX_slow = np.min(np.round(y_range[slow_idx[:,1]],decimals=2))
-#     initial_condition = [1.25*minX_slow,0]
-# elif alpha<0:
-#     maxY_slow = np.max(np.round(y_range[slow_idx[:,0]],decimals=2))
-#     initial_condition = [np.sqrt(-alpha),1.25*maxY_slow]
-
-# setting initial condition for blackbox model
-initial_condition = [1,1] 
-
-# # setting initial condition for nghost model
-# initial_condition = [0,0.5] 
+# setting initial condition for normal form model
+if alpha>0:
+    minX_slow = np.min(np.round(y_range[slow_idx[:,1]],decimals=2))
+    initial_condition = [1.25*minX_slow,0]
+elif alpha<0:
+    maxY_slow = np.max(np.round(y_range[slow_idx[:,0]],decimals=2))
+    initial_condition = [np.sqrt(-alpha),1.25*maxY_slow]
 
 sigmas =  [0.0001,0.0002,0.0005,0.001,0.002,0.005,0.01,0.02,0.05,0.1,0.2]
-# sigmas =  [0.05]
 
+# number of trials
 nruns = 30
 
 slowArea = []
@@ -585,8 +586,8 @@ for dsigma in sigmas:
     print(r'$\sigma=%.4f$'%dsigma)
     T_perSigma = []
     for i in range(nruns):
-        print('iteration=%i'%i)
-        Zs=solve_timeseriesRK4(current_model,initial_condition,t_eval,dsigma,para)
+        print('iteration=%i'%i, end='\r')
+        Zs=solve_timeseriesRK4(current_model,initial_condition,t_eval,dsigma)
     
         idcsTrjInSlowArea = []
         for z in range(Zs.shape[1]):
@@ -611,9 +612,9 @@ for dsigma in sigmas:
             fig, ax = plt.subplots(figsize=(5,6))
             ax.streamplot(Xg,Yg,U,V,density=1,color=[0.1,0.1,0.1,0.5])
             ax.plot(x,y,'-',ms=5.0,color='g')
-            ax.imshow(Q_boundary,cmap='binary',origin='lower',extent=[xmin,xmax,ymin,ymax],vmin=0,vmax=1,interpolation=None,alpha=0.75)
-            ax.imshow(Q_ov,cmap='gnuplot2_r',origin='lower',extent=[xmin,xmax,ymin,ymax],
-                          norm=colors.LogNorm(vmin=1e-5, vmax=1e-1),interpolation=None,alpha=0.5)
+            # ax.imshow(Q_boundary,cmap='binary',origin='lower',extent=[xmin,xmax,ymin,ymax],vmin=0,vmax=1,interpolation=None,alpha=0.75)
+            ax.imshow(Q_ov,cmap='gnuplot2_r',origin='lower',extent=[xmin,xmax,ymin,ymax],vmin=qmin, vmax=qmax
+                          ,interpolation=None,alpha=0.5)
             plt.xlim(xmin,xmax)
             plt.ylim(ymin,ymax)
             if T > 0:
@@ -639,10 +640,8 @@ for dsigma in sigmas:
     Ts.append(T_perSigma)
         
 #%% plot 
-alpha=0.10
-# sigmas= np.load('noise intensities_(alpha=%0.2f).npy'%alpha)
-# Ts=np.load('trapping time_(alpha=%0.2f).npy'%alpha)
-     
+
+
 plt.figure()
 plt.subplot(1,1,1)
 # for s in range(len(sigmas)):
@@ -654,7 +653,7 @@ plt.xscale('log')
 plt.xticks([1e-4,1e-3,1e-2,1e-1])
 plt.xlim(sigmas[0]-0.1,sigmas[-1]+0.1)
 plt.xlabel('$\sigma$',fontsize=17)
-plt.ylabel('total trapping time(a.u.)')
+plt.ylabel(r'total trapping time($\tau$)')
 # plt.savefig('total trapping time_(alpha=%0.2f).svg'%alpha,format='svg',bbox_inches=0, transparent=True)
 plt.show()       
       
@@ -677,4 +676,4 @@ plt.show()
 # # plt.savefig('total trapping time_(alpha=%0.2f).svg'%alpha,format='svg',bbox_inches=0, transparent=True)
 # plt.show()   
 
-"""
+

@@ -22,8 +22,6 @@ params = {'legend.fontsize': 15,
           'ytick.labelsize':20}
 pylab.rcParams.update(params)
 
-
-# from utils import *
 from quasi_potential_landscape import *
 
 def model_ghost(t, z , para):
@@ -31,6 +29,15 @@ def model_ghost(t, z , para):
     alpha=para[0]
 
     d1=alpha+z[0]**2
+    d2=-z[1]
+         
+    return np.array([d1, d2])
+
+def model_saddle(t, z , para):
+
+    alpha=para[0]
+
+    d1=alpha+z[0]
     d2=-z[1]
          
     return np.array([d1, d2])
@@ -44,7 +51,6 @@ def model_repeller(t, z , para):
          
     return np.array([d1, d2])
 
-
 def model_attractor(t, z , para):
 
     alpha=para[0]
@@ -54,15 +60,6 @@ def model_attractor(t, z , para):
          
     return np.array([d1, d2])
 
-
-def model_saddle(t, z , para):
-
-    alpha=para[0]
-
-    d1=alpha+z[0]
-    d2=-z[1]
-         
-    return np.array([d1, d2])
 
 #%%     RUN THE MODEL
 
@@ -82,22 +79,31 @@ print('estimating quasi-potential landscape. This might take sometime.')
 
 ## change the model in the argument to plot potentials of different phase space objects.
 ## currently set to simulate ghost manifold using 'model_ghost' function.
-qpl=QuasiPotentialLandscape(time_point,model_ghost,input_params)
+
+qpl=QuasiPotentialLandscape(time_point,model_ghost,input_params) # for ghost landscape
+# qpl=QuasiPotentialLandscape(time_point,model_saddle,input_params) # for saddle landscape
+
 grid_pot,Pt=qpl.find_potential()  
  
 
-Q= -np.log(Pt) # quasi-potential value
-zlims=[np.min(Q)-0.5,np.min(Q)+1]
+U= -np.log(Pt) # quasi-potential value
+zlims=[np.min(U)-0.5,np.min(U)+1]
 
 Xpot,Ypot=grid_pot 
-Q_contour=Q.copy()
-Q=Q-(np.nanmin(Q)-0.5)
+U=U-(np.nanmin(U)-0.5)
+
+#%%
 
 fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
 plt.rcParams.update({'font.size': 10})
-surf = ax.plot_surface(Xpot,Ypot, Q,  rstride=1, cstride=1, cmap='hot',alpha=0.3,
-            linewidth=0.25,antialiased=True,edgecolor='k',vmin=np.nanmin(Q),vmax=np.nanmax(Q))
+surf = ax.plot_surface(Xpot,Ypot, U,  rstride=1, cstride=1, cmap='hot',alpha=0.3,
+            linewidth=0.25,antialiased=True,edgecolor='k',vmin=np.nanmin(U),vmax=np.nanmax(U))
 ax.set_aspect('auto')
+ax.view_init(21,-17)
+ax.set_xlabel('x')
+ax.set_ylabel('y')
+ax.set_zlabel('Quasi-potential')
+plt.tight_layout()
 plt.show()   
 
 
