@@ -2,11 +2,18 @@
 """
 @author: Daniel Koch
 
-PLOTTING SUPPLEMENTARY FIGURE 2 (a-d) REQUIRES THE FILES:
-- simdat_HC4_noisy_30runs.npy
-- simdat_GC4_noisy_30runs.npy
-TO BE IN THE SAME FOLDER AS THIS SCRIPT. 
-RUN THE CODE FOR FIGURE 3(c) TO GENERATE THESE FILES. 
+This code reproduces the results shown in supplementary figure 2 (a)-(d) from the study:
+    
+Koch D, Nandan A, Ramesan G, Tyukin I, Gorban A, Koseska A (2024): 
+Ghost channels and ghost cycles guiding long transients in dynamical systems
+In: Physical Review Letters (forthcoming)
+
+IMPORTANT:
+    The files "functions.py" and "models.py" need to be in the same folder as this script
+    and the following files to be in the subfolder 'data':
+    - simdat_HC4_noisy_30runs.npy
+    - simdat_GC4_noisy_30runs.npy
+    If necessary, run code for figure 3 first to generate these files.
 """
 
 import numpy as np
@@ -42,7 +49,7 @@ nruns = 30
 
 #%% Supplementary figure 2 (a,b) - plotting
 
-simulations = np.load('simdat_HC4_noisy_30runs.npy')
+simulations = np.load('data\\simdat_HC4_noisy_30runs.npy')
 
 X = np.linspace(0,5, 20)
 Y = np.linspace(0,5, 20)
@@ -60,8 +67,8 @@ for i in range(len(idcs)):
     for ic in range(5):
         col = np.asarray(cmap(norm(ic))[0:3])
         for ii in range(3):
-            ax.plot(simulations[0,idx,ic,ii,1,:],simulations[0,idx,ic,ii,2,:],lw=0.5,color=col) # TODO: remove first index after rerunning
-            ax.scatter(simulations[0,idx,ic,ii,1,0],simulations[0,idx,ic,ii,2,0],marker='o',color=col,s=30,edgecolors='black') # TODO: remove first index after rerunning
+            ax.plot(simulations[idx,ic,ii,1,:],simulations[idx,ic,ii,2,:],lw=0.5,color=col)
+            ax.scatter(simulations[idx,ic,ii,1,0],simulations[idx,ic,ii,2,0],marker='o',color=col,s=30,edgecolors='black')
 
     ax.set_box_aspect(1)
     ax.xaxis.set_tick_params(labelsize=8)
@@ -78,7 +85,7 @@ for i in range(len(idcs)):
     for ic in range(5):
         col = np.asarray(cmap(norm(ic))[0:3])
         for ii in range(3):
-            ax.plot(simulations[0,idx,ic,ii,0,:],simulations[0,idx,ic,ii,1,:],color=col,lw=0.5) # TODO: remove first index after rerunning
+            ax.plot(simulations[idx,ic,ii,0,:],simulations[idx,ic,ii,1,:],color=col,lw=0.5) 
     
     ax.set_box_aspect(1/2)
     ax.xaxis.set_tick_params(labelsize=8)
@@ -104,7 +111,7 @@ wspace=0.41)
 
 #%% Supplementary figure 2 (c,d) - plotting
 
-simulations = np.load('simdat_GC4_noisy_30runs.npy')
+simulations = np.load('data\\simdat_GC4_noisy_30runs.npy')
 
 idcs = [0,3,6,9]
 

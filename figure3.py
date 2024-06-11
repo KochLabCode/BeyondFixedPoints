@@ -1,10 +1,17 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Mar 24 14:43:08 2023
-
 @author: Daniel Koch
-"""
 
+This code reproduces the results shown in supplementary figure 3 from the study:
+    
+Koch D, Nandan A, Ramesan G, Tyukin I, Gorban A, Koseska A (2024): 
+Ghost channels and ghost cycles guiding long transients in dynamical systems
+In: Physical Review Letters (forthcoming)
+"""
+loadData = True
+
+# Import packages etc
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
@@ -13,10 +20,15 @@ import models
 import os
 import sys
 
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
+fileDirectory = os.path.dirname(os.path.abspath(__file__))  
+os.chdir(fileDirectory)
 sys.path.append(os.path.join( os.path.dirname( __file__ ), '..' ))
+path_data= os.path.join(fileDirectory, 'data')   
+if not os.path.exists(path_data):
+    os.makedirs(path_data)
 
-# some plotting settings
+# settings for plotting
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 plt.rcParams.update(
     {
         'text.usetex': False,
@@ -38,28 +50,30 @@ ICs = np.asarray([x0s, y0s]).T
 
 #%% figure 3 (a) - simulation and saving data
 
-seeds = [2,5]
+if loadData == False:
 
-fileNames = ['data\\simdat_HC4_6ICs_s5e-3.npy','data\\simdat_HC4_6ICs_s5e-2.npy']
-
-sigmaVals = [5e-3,5e-2]
-
-print('Figure 3 (a): Simulating...')
-for i in range(2):   
+    seeds = [2,5]
     
-    np.random.seed(seeds[i])
+    fileNames = ['data\\simdat_HC4_6ICs_s5e-3.npy','data\\simdat_HC4_6ICs_s5e-2.npy']
     
-    simDat = []
+    sigmaVals = [5e-3,5e-2]
     
-    for ic in ICs:
-        sim = fun.RK4_na_noisy(models.sys_HC4,[],ic,0,dt,t_end, sigmaVals[i], naFun = None,naFunParams = None)
-        simDat.append(sim)
-            
-    simDat = np.asarray(simDat)
-    simDat = np.reshape(simDat, (6,3,2000))
-    
-    np.save(fileNames[i], simDat)
-print('Figure 3 (a): Simulation complete.')
+    print('Figure 3 (a): Simulating...')
+    for i in range(2):   
+        
+        np.random.seed(seeds[i])
+        
+        simDat = []
+        
+        for ic in ICs:
+            sim = fun.RK4_na_noisy(models.sys_HC4,[],ic,0,dt,t_end, sigmaVals[i], naFun = None,naFunParams = None)
+            simDat.append(sim)
+                
+        simDat = np.asarray(simDat)
+        simDat = np.reshape(simDat, (6,3,2000))
+        
+        np.save(fileNames[i], simDat)
+    print('Figure 3 (a): Simulation complete.')
 
 #%% figure 3 (a) - loading data and plotting
 
@@ -117,6 +131,8 @@ x4,y4 = np.asarray([x2,y2])+3.5
 
 ax.plot([x1,x2,x4,x3,x1],np.asarray([y1,y2,y4,y3,y1])-0.1,'-k',lw=2)
 
+print('Figure 3 (a): plotting complete.')
+
 #%% ~~~~~~~~~~~~~~~~~~~ Ghost channel ~~~~~~~~~~~~~~~~~~~
 
 dt = 0.05
@@ -128,30 +144,33 @@ x0s = np.linspace(0.515,0.95,6)
 y0s = (lambda y: 1 - y)(x0s)
 ICs = np.asarray([x0s, y0s]).T
 
+sigmaValues =  [0.0001,0.0002,0.0005,0.001,0.002,0.005,0.01,0.02,0.05,0.1,0.2]
+
 #%% figure 3 (b) - simulation and saving data
 
-seeds = [1,1]
-
-fileNames = ['data\\simdat_GC4_6ICs_s5e-3.npy','data\\simdat_GC4_6ICs_s5e-2.npy']
-
-sigmaVals = [5e-3,5e-2]
-
-print('Figure 3 (b): Simulating...')
-for i in range(2):   
+if loadData == False:
+    seeds = [1,1]
     
-    np.random.seed(seeds[i])
+    fileNames = ['data\\simdat_GC4_6ICs_s5e-3.npy','data\\simdat_GC4_6ICs_s5e-2.npy']
     
-    simDat = []
+    sigmaVals = [5e-3,5e-2]
     
-    for ic in ICs:
-        sim = fun.RK4_na_noisy(models.sys_ghost4,[],ic,0,dt,t_end, sigmaVals[i], naFun = None,naFunParams = None)
-        simDat.append(sim)
-        ax.plot(sim[1,:],sim[2,:],lw=2.5,color=col)
+    print('Figure 3 (b): Simulating...')
+    for i in range(2):   
         
-    simDat = np.asarray(simDat)
-    simDat = np.reshape(simDat, (6,3,6000))
-    np.save(fileNames[i], simDat)
-print('Figure 3 (b): Simulation complete.')
+        np.random.seed(seeds[i])
+        
+        simDat = []
+        
+        for ic in ICs:
+            sim = fun.RK4_na_noisy(models.sys_ghost4,[],ic,0,dt,t_end, sigmaVals[i], naFun = None,naFunParams = None)
+            simDat.append(sim)
+            ax.plot(sim[1,:],sim[2,:],lw=2.5,color=col)
+            
+        simDat = np.asarray(simDat)
+        simDat = np.reshape(simDat, (6,3,6000))
+        np.save(fileNames[i], simDat)
+    print('Figure 3 (b): Simulation complete.')
 
 #%% figure 3 (b) - loading data and plotting
 
@@ -168,7 +187,7 @@ grid = np.meshgrid(X, Y)
 
 fig, ax = plt.subplots(figsize=(5,5))
 fun.plot_streamline(ax,models.sys_ghost4,[] ,10, grid, lw = 1.5)
-plt.title('4-ghost channel, $\sigma=$'+"{:.4f}".format(sigmaVals[0]),fontsize=16)
+plt.title('4-ghost channel, $\sigma=$'+"{:.4f}".format(sigmaValues[0]),fontsize=16)
 plt.xlabel('x',fontsize=16);plt.ylabel('y',fontsize=16)
 plt.xlim(-0.35,5)
 plt.ylim(-0.35,5)
@@ -189,7 +208,7 @@ ax.plot([x1,x2,x4,x3,x1],np.asarray([y1,y2,y4,y3,y1])-0.1,'-k',lw=2)
     
 fig, ax = plt.subplots(figsize=(5,5))
 fun.plot_streamline(ax,models.sys_ghost4,[] ,10, grid, lw = 1.5)
-plt.title('4-ghost channel, $\sigma=$'+"{:.4f}".format(sigmaVals[1]),fontsize=16)
+plt.title('4-ghost channel, $\sigma=$'+"{:.4f}".format(sigmaValues[1]),fontsize=16)
 plt.xlabel('x',fontsize=16);plt.ylabel('y',fontsize=16)
 plt.xlim(-0.35,5)
 plt.ylim(-0.35,5)
@@ -207,6 +226,7 @@ x4,y4 = np.asarray([x2,y2])+3.5
 
 ax.plot([x1,x2,x4,x3,x1],np.asarray([y1,y2,y4,y3,y1])-0.1,'-k',lw=2)
 
+print('Figure 3 (b): plotting complete.')
 
 
 #%% ~~~~~~~~~~~~~~~~~~~ Trajectory quantifications for heteroclinic and Ghost channels ~~~~~~~~~~~~~~~~~~~
@@ -214,62 +234,57 @@ ax.plot([x1,x2,x4,x3,x1],np.asarray([y1,y2,y4,y3,y1])-0.1,'-k',lw=2)
 
 #%% figure 3 (c) - loading data and plotting - simulation and saving data
 
-dt = 0.05
-t_end = 500
-timesteps = int(t_end/dt)
-timepoints = np.linspace(0, t_end, timesteps+1)
-
-x0s = np.linspace(0.515,0.95,6)
-y0s = (lambda y: 1 - y)(x0s)
-ICs = np.asarray([x0s, y0s]).T
-
-sigmaValues =  [0.0001,0.0002,0.0005,0.001,0.002,0.005,0.01,0.02,0.05,0.1,0.2]
-
-nruns = 30 # only take even integers
-
-# Heteroclinic channels
-simulations_HC = []
-np.random.seed(1)
-for i in range(len(sigmaValues)): 
-    sig = sigmaValues[i]
-    print('Figure 3 (c): Simulations for heteroclinic channel ' + str(int(i*100/len(sigmaValues))) + ' % complete.')
-    for ic in ICs:
-        for n in range(nruns):
-            sim = fun.RK4_na_noisy(models.sys_HC4,[],ic,0,dt,t_end, sig, naFun = None,naFunParams = None)
-            simulations_HC.append(sim)
-       
-simulations_HC =  np.reshape(np.asarray(simulations_HC),(1,len(sigmaValues),len(ICs),nruns,3,timesteps))
-np.save('simdat_HC4_noisy_30runs.npy',simulations_HC)
-
-# Ghost channels
-
-simulations_ghost = []
-np.random.seed(1)
-for i in range(len(sigmaValues)): 
-    sig = sigmaValues[i]
-    print('Figure 3 (c): Simulations for ghost channel ' + str(int(i*100/len(sigmaValues))) + ' % complete.')
-    for ic in ICs:
-        for i in range(nruns):
-            sim = fun.RK4_na_noisy(models.sys_ghost4,[],ic,0,dt,t_end, sig, naFun = None,naFunParams = None)
-            simulations_ghost.append(sim)
- 
-simulations_ghost =  np.reshape(np.asarray(simulations_ghost),(len(sigmaValues),len(ICs),nruns,3,timesteps))
-np.save('simdat_GC4_noisy_30runs.npy',simulations_ghost)
+if loadData == False:
+        
+    dt = 0.05
+    t_end = 500
+    timesteps = int(t_end/dt)
+    timepoints = np.linspace(0, t_end, timesteps+1)
+        
+    nruns = 30 # only take even integers
+    
+    # Heteroclinic channels
+    simulations_HC = []
+    np.random.seed(1)
+    for i in range(len(sigmaValues)): 
+        sig = sigmaValues[i]
+        print('Figure 3 (c): Simulations for heteroclinic channel ' + str(int(i*100/len(sigmaValues))) + ' % complete.')
+        for ic in ICs:
+            for n in range(nruns):
+                sim = fun.RK4_na_noisy(models.sys_HC4,[],ic,0,dt,t_end, sig, naFun = None,naFunParams = None)
+                simulations_HC.append(sim)
+           
+    simulations_HC =  np.reshape(np.asarray(simulations_HC),(len(sigmaValues),len(ICs),nruns,3,timesteps))
+    np.save('data\\simdat_HC4_noisy_30runs.npy',simulations_HC)
+    
+    # Ghost channels
+    
+    simulations_ghost = []
+    np.random.seed(1)
+    for i in range(len(sigmaValues)): 
+        sig = sigmaValues[i]
+        print('Figure 3 (c): Simulations for ghost channel ' + str(int(i*100/len(sigmaValues))) + ' % complete.')
+        for ic in ICs:
+            for i in range(nruns):
+                sim = fun.RK4_na_noisy(models.sys_ghost4,[],ic,0,dt,t_end, sig, naFun = None,naFunParams = None)
+                simulations_ghost.append(sim)
+     
+    simulations_ghost =  np.reshape(np.asarray(simulations_ghost),(len(sigmaValues),len(ICs),nruns,3,timesteps))
+    np.save('data\\simdat_GC4_noisy_30runs.npy',simulations_ghost)
 
 #%% figure 3 (c) - loading and analyzing data
 
-simulationsHC = np.load('simdat_HC4_noisy_30runs.npy')
-simulationsHC_ = np.reshape(simulationsHC, (simulationsHC.shape[0],simulationsHC.shape[1],simulationsHC.shape[2]*simulationsHC.shape[3],simulationsHC.shape[4],simulationsHC.shape[5]))
-simulationsHC_= simulationsHC_[0]
+simulationsHC = np.load('data\\simdat_HC4_noisy_30runs.npy')
+simulationsHC_ = np.reshape(simulationsHC, (simulationsHC.shape[0],simulationsHC.shape[1]*simulationsHC.shape[2],simulationsHC.shape[3],simulationsHC.shape[4]))
 
-simulationsGC = np.load('simdat_GC4_noisy_30runs.npy')
+simulationsGC = np.load('data\\simdat_GC4_noisy_30runs.npy')
 simulationsGC_ = np.reshape(simulationsGC, (simulationsGC.shape[0],simulationsGC.shape[1]*simulationsGC.shape[2],simulationsGC.shape[3],simulationsGC.shape[4]))
 
-sigmaValues =  [0.0001,0.0002,0.0005,0.001,0.002,0.005,0.01,0.02,0.05,0.1,0.2]
 nruns = 30 
 
 EDsHC = []
 SDsHC = []
+
 EDsGC = []
 SDsGC = []
  
@@ -299,7 +314,7 @@ for i in range(len(sigmaValues)):
     SDsGC.append(SD)
 
 
-#%% figure 3 (c) - plotting
+# figure 3 (c) - plotting
 myFig = plt.figure(figsize=(7.5*inCm,5.75*inCm))
 plt.errorbar(sigmaValues,EDsHC,yerr=SDsHC/np.sqrt(nruns*5/2),fmt='-ok',ms=4,capsize=3,label='heteroclinic channel',lw=1)
 plt.errorbar(sigmaValues,EDsGC,yerr=SDsGC/np.sqrt(5*nruns/2),fmt=':sk',mfc='w',mec='k',ecolor='k',ms=4,capsize=3,label='ghost channel',lw=1)

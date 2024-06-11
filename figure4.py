@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Mar 24 14:43:08 2023
 @author: Daniel Koch
 
 This code reproduces the results shown in figure 4 from the study:
     
-Koch D, Nandan A, Ramesan G, Koseska A (2023): 
-Beyond fixed points: transient quasi-stable dynamics emerging from ghost channels and cycles. 
-In: Arxiv. https://doi.org/10.48550/arXiv.2309.17201
-
+Koch D, Nandan A, Ramesan G, Tyukin I, Gorban A, Koseska A (2024): 
+Ghost channels and ghost cycles guiding long transients in dynamical systems
+In: Physical Review Letters (forthcoming)
 
 IMPORTANT:
     The files "functions.py" and "models.py" need to be in the same folder as this script.
@@ -27,11 +25,17 @@ from mpl_toolkits.mplot3d.art3d import Line3DCollection
 import functions as fun 
 import models
 import os
+import sys
 import warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning) 
 
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
+fileDirectory = os.path.dirname(os.path.abspath(__file__))  
+os.chdir(fileDirectory)
+sys.path.append(os.path.join( os.path.dirname( __file__ ), '..' ))
+path_data= os.path.join(fileDirectory, 'data')   
+if not os.path.exists(path_data):
+    os.makedirs(path_data)
+    
 # settings for plotting
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 plt.rcParams.update(
@@ -55,6 +59,11 @@ def noBackground(ax):
     
 tcColors = ['royalblue','tomato','mediumaquamarine','mediumorchid']
 
+# set simulation time
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+t_end = 1000
+stepsize = 0.01
+timesteps = int(t_end/stepsize)
 
 #%% Heteroclinic cycle
 """
@@ -76,30 +85,27 @@ par_Horchler = [alpha, beta, v]
 
 # simulation settings
 ICs = [[1,0,0],[0,1,0],[0,0,1]] # initial conditions
-t_end = 1000
-stepsize = 0.01
-timesteps = int(t_end/stepsize)
 nruns = 30 # number of repetitions
-sigma =  [0.0001,0.0002,0.0005,0.001,0.002,0.005,0.01,0.02,0.05,0.1,0.2] # noise levels
-
+sigmaValues=  [0.0001,0.0002,0.0005,0.001,0.002,0.005,0.01,0.02,0.05,0.1,0.2] # noise levels
 
 if loadData == False:
     # run and save simulations
     simulations = []
-    for s in sigma:
-        print(s)
+    for i in range(len(sigmaValues)): 
+        sig = sigmaValues[i]
+        print('Figure 4: Simulations for heteroclinic cycle ' + str(int(i*100/len(sigmaValues))) + ' % complete.')
         ic = 0
         for n in range(nruns):
             ic += 1 
             if ic==3: ic = 0
-            simDat = fun.RK4_na_noisy_pos(models.Horchler2015,par_Horchler,ICs[ic],0,stepsize,t_end, s, naFun = None,naFunParams = None)    
+            simDat = fun.RK4_na_noisy_pos(models.Horchler2015,par_Horchler,ICs[ic],0,stepsize,t_end, sig, naFun = None,naFunParams = None)    
             simulations.append(simDat)
     
-    simulations =  np.reshape(np.asarray(simulations),(len(sigma),nruns,4,timesteps))
-    np.save('simdat_Horchler2015_final.npy',simulations)
+    simulations =  np.reshape(np.asarray(simulations),(len(sigmaValues),nruns,4,timesteps))
+    np.save('data\\simdat_Horchler2015_final.npy',simulations)
     
 elif loadData == True:
-    simulations = np.load('simdat_Horchler2015_final.npy')
+    simulations = np.load('data\\simdat_Horchler2015_final.npy')
 
 #%% Figure 4 (b) - Timecourses for selected noise levels  
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -143,6 +149,8 @@ plt.xticks(fontsize=8)
 plt.yticks(fontsize=8)
 
 plt.subplots_adjust(top=0.936, bottom=0.154, left=0.163, right=0.942, hspace=0.0, wspace=0.2)
+
+print('Figure 4 (b): plotting complete.')
 
 #%% Figure 4 (c) - phase space trajectories colorcoded according to velocity
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -217,29 +225,8 @@ for i in range(len(sigs)):
     ax.set_zlabel('$z$')
     plt.tight_layout()
 
+print('Figure 4 (c): plotting complete.')
 
-
-#%% calculate time spend at saddles
-
-# SN1 = np.array([1,0,0])
-# SN2 = np.array([0,1,0])
-# SN3 = np.array([0,0,1])
-
-# SNs = [SN1, SN2, SN3]
-# M_SNT = np.zeros((len(SNs),len(sigma),nruns))
-# eps = 0.1 
-
-
-# for i in range(len(sigma)):
-#     print(i)
-#     for ii in range(nruns):
-#             nth = 20
-#             for iii in range(3):
-#                 # print(i,ii,iii)
-#                 # dist = fun.euklDist_TvP(simulations[iii,i,ii,::nth].T, SNs[iii])
-#                 dist = fun.distanceToPoint(simulations[i,ii,1:,::nth],SNs[iii])
-#                 M_SNT[iii,i,ii] = stepsize*nth*len(dist[dist<eps])
-                
 #%% Figure 4 (d) - Period, time spent at saddles, time spent switching between saddles
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -266,8 +253,8 @@ stdPeriods_saddle = []
 stdTimesAtSaddles = []
 stdTimesNotAtSaddles = []
 
-for s in range(len(sigma)):
-    print('progress:', "{:.0f}".format(100*(s/len(sigma))), '%')
+for s in range(len(sigmaValues)):
+    print('Figure 4 (d): data analysis ', "{:.0f}".format(100*(s/len(sigmaValues))), '% complete.')
     
     #individual values all runs
     allPeriods_rs = []
@@ -389,9 +376,9 @@ for s in range(len(sigma)):
 # plot
 myFig = plt.figure(figsize=(8.6*inCm/2,4*inCm))
 
-plt.errorbar(sigma,avgPeriods_saddle,yerr=stdPeriods_saddle,color='r',capsize=1.5,fmt='-d',ms=3,label='period',lw=1)      
-plt.errorbar(sigma,avgTimesAtSaddles,yerr=stdTimesAtSaddles,color='k',capsize=1.5,fmt='-o',ms=3,label='in saddle vicinity period',lw=1)   
-plt.errorbar(sigma,avgTimesNotAtSaddles,yerr=stdTimesNotAtSaddles,mfc='w',mec='k',ecolor='k',capsize=1.5,fmt=':sk',ms=3,label='not in saddle vicinity',lw=1)   
+plt.errorbar(sigmaValues,avgPeriods_saddle,yerr=stdPeriods_saddle,color='r',capsize=1.5,fmt='-d',ms=3,label='period',lw=1)      
+plt.errorbar(sigmaValues,avgTimesAtSaddles,yerr=stdTimesAtSaddles,color='k',capsize=1.5,fmt='-o',ms=3,label='in saddle vicinity period',lw=1)   
+plt.errorbar(sigmaValues,avgTimesNotAtSaddles,yerr=stdTimesNotAtSaddles,mfc='w',mec='k',ecolor='k',capsize=1.5,fmt=':sk',ms=3,label='not in saddle vicinity',lw=1)   
 
 plt.xscale('log')
 plt.xticks([1e-4,1e-3,1e-2,1e-1],fontsize=8)
@@ -400,6 +387,7 @@ plt.xlabel('$\sigma$',fontsize=11)
 
 plt.subplots_adjust(top=0.925, bottom=0.307, left=0.187, right=0.981, hspace=0.2, wspace=0.2)
 
+print('Figure 4 (d): plotting complete.')
 
 
 #%% Ghost cycle
@@ -423,26 +411,27 @@ ICs = [[0.5,0.5,0.5],[0.5,1.5,0.5],[1.5,0.5,0.5],[1.5,1.5,0.5]] # initial condit
 t_end = 1000
 stepsize = 0.01
 nruns = 30 # number of repetitions
-sigma =  [0.0001,0.0002,0.0005,0.001,0.002,0.005,0.01,0.02,0.05,0.1,0.2] # noise levels
+sigmaValues=  [0.0001,0.0002,0.0005,0.001,0.002,0.005,0.01,0.02,0.05,0.1,0.2] # noise levels
 
 if loadData == False:
     # run and save simulations
 
     simulations = []
-    for s in sigma:
-        print(s)
+    for i in range(len(sigmaValues)): 
+        sig = sigmaValues[i]
+        print('Figure 4: Simulations for ghost cycle ' + str(int(i*100/len(sigmaValues))) + ' % complete.')
         ic = 0
         for n in range(nruns):
             ic += 1 
             if ic==4: ic = 0
-            simDat = fun.RK4_na_noisy(models.sys_ghostCycle3D,[areas,steepness],ICs[ic],0,stepsize,t_end, s, naFun = None,naFunParams = None)
+            simDat = fun.RK4_na_noisy(models.sys_ghostCycle3D,[areas,steepness],ICs[ic],0,stepsize,t_end, sig, naFun = None,naFunParams = None)
             simulations.append(simDat)    
     
-    simulations =  np.reshape(np.asarray(simulations),(len(sigma),nruns,4,timesteps))
-    np.save('simdat_Ghostcycle.npy',simulations)
+    simulations =  np.reshape(np.asarray(simulations),(len(sigmaValues),nruns,4,timesteps))
+    np.save('data\\simdat_Ghostcycle.npy',simulations)
 
 elif loadData == True:
-    simulations = np.load('simdat_Ghostcycle.npy') 
+    simulations = np.load('data\\simdat_Ghostcycle.npy') 
 
 
         
@@ -457,22 +446,21 @@ g3 = np.array([1.5,0.5,0.5])
 g4 = np.array([1.5,1.5,0.5])
 
 Gs = [g1,g2,g3,g4]
-# M_SNT = np.zeros((len(Gs),len(sigma),nruns))
+
 
 nth = 10
-stateTCs = np.zeros((len(sigma),nruns,len(Gs)+1,int(timesteps/nth))) 
+stateTCs = np.zeros((len(sigmaValues),nruns,len(Gs)+1,int(timesteps/nth))) 
 
 eps = 0.1 
 
-for i in range(len(sigma)):
-    print(i)
+for i in range(len(sigmaValues)):    
+    print('Figure 4 (f): data analysis ' + "{:.0f}".format(100*(i/len(sigmaValues))) + ' % complete.')
+    
     for ii in range(nruns):
             stateTCs[i,ii,0,:] = simulations[i,ii,0,::nth]
             for iii in range(4):
                 dist = fun.distanceToPoint(simulations[i,ii,1:,::nth],Gs[iii])
-                stateTCs[i,ii,iii+1,:] = dist
-                # M_SNT[iii,i,ii] = stepsize*nth*len(dist[dist<eps])
-                
+                stateTCs[i,ii,iii+1,:] = dist     
 
 # plot
 myFig = plt.figure(figsize=(8.6*inCm/2,6*inCm))
@@ -513,6 +501,8 @@ plt.xticks(fontsize=8)
 plt.yticks(fontsize=8)
 
 plt.subplots_adjust(top=0.936, bottom=0.154, left=0.163, right=0.942, hspace=0.0, wspace=0.2)
+
+print('Figure 4 (f): plotting complete.')
 
 #%% Figure 4 (g) - phase space trajectories colorcoded according to velocity
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -585,6 +575,8 @@ for i in range(len(sigs)):
     ax.set_ylabel('$y$')
     ax.set_zlabel('$z$')
     plt.tight_layout()
+    
+print('Figure 4 (g): plotting complete.')
 
 #%% Figure 4 (h) - Period, time spent at ghosts, time spent switching between ghosts
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -613,8 +605,9 @@ stdPeriods_ghost = []
 stdTimesAtGhosts = []
 stdTimesNotAtGhosts = []
 
-for s in range(len(sigma)):
-    print('progress:', "{:.0f}".format(100*(s/len(sigma))), '%')
+for s in range(len(sigmaValues)):
+    
+    print('Figure 4 (h): data analysis ' + "{:.0f}".format(100*(s/len(sigmaValues))) + ' % complete.')
     
     #individual values all runs
     allPeriods_rs = []
@@ -739,9 +732,9 @@ for s in range(len(sigma)):
     
 myFig = plt.figure(figsize=(8.6*inCm/2,4*inCm))
    
-plt.errorbar(sigma,avgPeriods_ghost,yerr=stdPeriods_ghost,color='r',capsize=1.5,fmt='-d',ms=3,label='period',lw=1)        
-plt.errorbar(sigma,avgTimesAtGhosts,yerr=stdTimesAtGhosts,color='k',capsize=1.5,fmt='-o',ms=3,label='in ghost vicinity',lw=1)   
-plt.errorbar(sigma,avgTimesNotAtGhosts,yerr=stdTimesNotAtGhosts,mfc='w',mec='k',ecolor='k',capsize=1.5,fmt=':sk',ms=3,label='not in ghost vicinity',lw=1)   
+plt.errorbar(sigmaValues,avgPeriods_ghost,yerr=stdPeriods_ghost,color='r',capsize=1.5,fmt='-d',ms=3,label='period',lw=1)        
+plt.errorbar(sigmaValues,avgTimesAtGhosts,yerr=stdTimesAtGhosts,color='k',capsize=1.5,fmt='-o',ms=3,label='in ghost vicinity',lw=1)   
+plt.errorbar(sigmaValues,avgTimesNotAtGhosts,yerr=stdTimesNotAtGhosts,mfc='w',mec='k',ecolor='k',capsize=1.5,fmt=':sk',ms=3,label='not in ghost vicinity',lw=1)   
 
 plt.xscale('log')
 plt.xticks([1e-4,1e-3,1e-2,1e-1],fontsize=8)
@@ -750,168 +743,4 @@ plt.xlabel('$\sigma$',fontsize=11)
 
 plt.subplots_adjust(top=0.925, bottom=0.307, left=0.187, right=0.981, hspace=0.2, wspace=0.2)
 
-#%% Figure S3 (d) 
-
-# set random seed (optional)
-seed_int = 3
-np.random.seed(seed_int)
-
-
-alpha = np.ones(3)*2
-beta = np.ones(3)
-v = np.ones(3)*4
-par_Horchler = [alpha, beta, v]
-stepsize = 0.01
-t_end = 6000   #
-timesteps = int(t_end/stepsize)
-
-s = 0.0001 # sigma
-
-simDatGhost = fun.RK4_na_noisy(models.sys_ghostCycle3D,[areas,steepness],[0.5,0.5,0.5],0,stepsize,t_end, s, naFun = None,naFunParams = None)
-simDatHorchler = fun.RK4_na_noisy_pos(models.Horchler2015,par_Horchler,[1,0,0],0,stepsize,t_end, s, naFun = None,naFunParams = None)    
-
-nth = 10
-
-# positions of saddles
-SN1 = np.array([1,0,0])
-SN2 = np.array([0,1,0])
-SN3 = np.array([0,0,1])
-
-# positions of ghosts
-g1 = np.array([0.5,0.5,0.5])
-g2 = np.array([0.5,1.5,0.5])
-g3 = np.array([1.5,0.5,0.5])
-g4 = np.array([1.5,1.5,0.5])
-
-SNs = [SN1, SN2, SN3]
-Gs = [g1,g2,g3,g4]
-
-timeAtGhosts = []
-timeAtSNs = []
-
-eps = 0.1 # size of epsilon vicinity
-
-for n in range(4):
-    
-    # for each time point determine if system is in epsilon vicinity of saddle/ghost point
-    
-    distGhost = fun.distanceToPoint(simDatGhost[1:,::nth],Gs[n])
-    if n < 3: distHC = fun.distanceToPoint(simDatHorchler[1:,::nth],SNs[n])
-    
-    bGhost = []
-    if n < 3: bHC = []
-
-    for i in range(int(timesteps/nth)):
-        if distGhost[i] < eps:
-            bGhost.append(1)
-        else:
-            bGhost.append(0)
-        if n < 3:    
-            if distHC[i] < eps:
-                bHC.append(1)
-            else:
-                bHC.append(0)
-    bGhost = np.asarray(bGhost)
-    if n < 3: bHC = np.asarray(bHC)
-    
-    
-    # calculate time in vicinity of saddle/ghost points
-    t = 0
-    seq = 0
-    
-    while t < int(timesteps/nth)-1:
-        if bGhost[t] == 1:
-            if bGhost[t]-bGhost[t+1] == 0:
-                seq += 1
-            else:
-                timeAtGhosts.append(seq*nth*stepsize)
-                seq = 0
-        t+=1
-    
-    if n < 3: 
-        t = 0
-        seq = 0
-        
-        while t < int(timesteps/nth)-1:
-            if bHC[t] == 1:
-                if bHC[t]-bHC[t+1] == 0:
-                    seq += 1
-                else:
-                    timeAtSNs.append(seq*nth*stepsize)
-                    seq = 0
-            t+=1
-                
-#%% plot
-myFig = plt.figure(figsize=(14*inCm/2,6*inCm))
-plt.scatter([np.mean(timeAtSNs[1:])], [400], marker='v', s =100, color='green', label='saddles',alpha=0.5)
-plt.scatter([np.mean(timeAtGhosts[1:])], [400],marker='v', s =100, color='blue', label='ghosts',alpha=0.5)
-plt.hist(timeAtSNs[1:],alpha=0.5, range=(9,15),bins=30, color='green')
-plt.hist(timeAtGhosts[1:],alpha=0.5,range=(9,15),bins=30, color='blue')
-
-
-plt.subplots_adjust(top=0.936, bottom=0.261, left=0.235, right=0.945, hspace=0.2, wspace=0.2)
-
-plt.xlabel('time spent within $\\epsilon$-vicinity (a.u.)')
-plt.ylabel('count')
-plt.legend()
-
-print('Difference between time at ghosts and time at saddle:' + str(np.abs(np.mean(timeAtSNs[1:]) - np.mean(timeAtGhosts[1:]))) + ' a.u. ' + '; in percent:'  + str(100 + 100*( - np.mean(timeAtSNs[1:]))/np.mean(timeAtGhosts[1:])))
-
-#%% Figure S3 (a)-(c)
-
-simulations = np.load('simdat_Ghostcycle.npy')
-
-myFig = plt.figure(figsize=(12,3))
-
-ax1 = myFig.add_subplot(1,3,1)
-
-s = 0; n = 0
-
-# raw timecourses 
-
-ax1.plot(simulations[s,n,0,:], simulations[s,n,3,:] ,'-', label='z', color = 'mediumblue', lw=3)
-ax1.plot(simulations[s,n,0,:], simulations[s,n,1,:] ,'-', label='x', color = 'k', lw=3)
-ax1.plot(simulations[s,n,0,:], simulations[s,n,2,:] ,'-', label='y', color = 'crimson', lw=3)
-
-ax1.set_xlabel('time (a.u.)',fontsize=18)
-ax1.set_ylabel('$\overline{x}(t) = ( x(t), y(t), z(t) )^T$',fontsize=18)
-ax1.set_ylim(0.4,1.6)
-ax1.set_xlim(0,150)
-plt.xticks(fontsize=16)
-plt.yticks(fontsize=16)
-plt.tight_layout()
-
-
-# Euclidean distance to ghosts
-
-ax1 = myFig.add_subplot(1,3,2)
-
-for i in range(4):
-    ax1.plot(stateTCs[s,n,0,:], stateTCs[s,n,i+1,:] ,'-', label='G'+str(i+1), color = tcColors[i], lw=3) #cm.get_cmap('magma',5)(i)
-
-ax1.set_xlabel('time (a.u.)',fontsize=18)
-ax1.set_ylabel('$|| \overline{x}(t) - G_i ||$',fontsize=18)
-ax1.set_ylim(0,1.5)
-ax1.set_xlim(0,150)
-plt.xticks(fontsize=16)
-plt.yticks(fontsize=16)
-
-# Hill function applied to Euclidean distance
-
-ax1 = myFig.add_subplot(1,3,3)
-
-for i in range(4):
-    ax1.plot(stateTCs[s,n,0,:], fun.hill(stateTCs[s,n,i+1,:],0.3,-3) ,'-', label='G'+str(i+1), color = tcColors[i], lw=3) #cm.get_cmap('magma',5)(i)
-
-ax1.set_xlabel('time (a.u.)',fontsize=18)
-ax1.set_ylabel('$\Theta(|| \overline{x}(t) - G_i ||)$',fontsize=18)
-ax1.set_yticks([0,.5,1])
-ax1.set_ylim(0,1.1)
-ax1.set_xlim(0,150)
-plt.xticks(fontsize=16)
-plt.yticks(fontsize=16)
-
-plt.subplots_adjust(top=0.922, bottom=0.259, left=0.068, right=0.988, hspace=0.2, wspace=0.285)
-
-
-
+print('Figure 4 (h): plotting complete.')
