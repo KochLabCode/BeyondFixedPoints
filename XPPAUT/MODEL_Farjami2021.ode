@@ -1,0 +1,29 @@
+#####################################################################################
+# Koch D, Nandan A, Ramesan G, Tyukin I, Gorban A, Koseska A (2024): 
+# Ghost channels and ghost cycles guiding long transients in dynamical systems
+# In: Physical Review Letters (forthcoming)
+#
+# Model originally from Farjami S. et al (2021), DOI: 10.1098/rsif.2021.0442 
+#####################################################################################
+
+
+Int x1=0.001,x2=0.1,x3=10.0
+#Int x1=0.0,x2=0.0,x3=0.0
+
+dx1/dt=b+g/((1+alpha*(x2^h))*(1+beta1*(x3^h)))-d1*x1
+dx2/dt=b+g/((1+alpha*(x3^h))*(1+beta2*(x1^h)))-d2*x2
+dx3/dt=b+g/((1+alpha*(x1^h))*(1+beta3*(x2^h)))-d3*x3
+
+param g=0.0,alpha=9.0,beta1=0.1,beta2=0.1,beta3=0.1
+param h=3,d1=0.2,d2=0.2,d3=0.2,b=0.00001
+#param g=0.1
+@ meth=cvode,dt=0.1,total=1500,maxstor=100000
+@ xp=t,bound=1000000
+@ xlo=0,xhi=1000,ylo=0,yhi=10
+​
+# Some AUTO parameters
+@ autovar=x,autoxmin=0.0,autoymin=0.0,autoxmax=5,autoymax=5
+@ ntst=400,nmax=2500,npr=500,ds=0.001,dsmin=0.0001,dsmax=0.05
+@ ncol=4,epsl=1e-4,parmin=0,parmax=2,normmin=0,normmax=1000
+@ epsu=1e-4,epss=0.0001
+done
