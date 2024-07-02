@@ -11,11 +11,41 @@ In: Physical Review Letters (forthcoming)
 """
 import numpy as np
 import matplotlib.pyplot as plt
-from dtaidistance import dtw_ndim
-from dtaidistance import dtw
-from dtaidistance import dtw_visualisation as dtwvis
+import pandas as pd
+import os
+# from dtaidistance import dtw_ndim
+# from dtaidistance import dtw
+# from dtaidistance import dtw_visualisation as dtwvis
 
 #%% Plotting functions
+
+def plot_bif(par,x, vline):
+    
+    '''
+    function for plotting saddle-node bifurcation diagram
+    
+    '''
+    
+    plt.figure()
+    
+    if len(par)>1:
+        for i in [0]: 
+            plt.plot(par[i],x[i],'k-',lw=1.5) 
+        for i in [1]: 
+            plt.plot(par[i],x[i],'k--',lw=1.5) 
+       
+    else:
+        plt.plot(par[0],x[0],'k-',lw=3) 
+    
+    plt.xlabel(r'$\alpha$')
+    plt.ylabel(r'$x^*$')
+    plt.ylim(-1,1)
+    plt.xlim(-1,1)
+    plt.axhline(y=0,color='gray',ls='--',lw=1.0)
+    # plt.axvline(x=0,color='gray',ls='--',lw=2.0)  
+    plt.axvline(x=vline, color='b',ls='-',lw=1.0,label='\u03B1')               
+    plt.legend()
+    plt.show()
 
 def plot_streamline(ax,sys,parameters,t,grid,d=2,traj=None,trajColor='m', fps=None,stab=None,save=None, **kwargs):
                 
@@ -222,6 +252,79 @@ def dtw_getWarpingPaths(s1,s2, mode = 'multiple repetitions', showWarpingPaths =
     # print('DTW out')
     return np.asarray(best_path)[:,0], np.asarray(best_path)[:,1]
 
+
+def allinfo_filereader_2var(folder_load,filename,threshold):
+    
+    '''
+    
+    this function loads saved .dat file from xppaut and splits the steady state values
+    into different branches (stable and unstable). Currently customized to 
+    two dimensional systems.
+    
+    inputs
+    --------
+    
+    folder_load: fpath to folder where the datfile is saved
+    filename: name of the .dat file
+    threshold: number of points that specify whether a branch needs to 
+               be considered or not.
+   
+    returns
+    --------
+    
+    p: nested list of parameter values. Each list within correspond to different branches.
+    ss_u1: nested list of steady state values of first variable
+    ss_u2: nested list of steady state values of second variable
+
+    '''
+    
+    df = pd.read_table(os.path.join(folder_load,filename+'.dat'), sep="\s+",header=None,skiprows=1)
+    df=df.to_numpy()    
+    limit=-1
+    
+    par=df[:,3][:limit]
+    u1=df[:,6][:limit]
+    u2=df[:,7][:limit]
+    
+    
+    branch=df[:,0][:limit]
+    inds=branch[:-1]-branch[1:]
+    branch_cut_inds=np.argwhere(inds!=0)+[[1]]
+    
+    if len(branch_cut_inds)==0:
+        ss_u1=[u1]
+        ss_u2=[u2]
+        p=[par]
+        return p,ss_u1,ss_u2
+    else:
+        ss_u1=[u1[:branch_cut_inds[0][0]]];ss_u2=[u2[:branch_cut_inds[0][0]]] # first branch
+        p=[par[:branch_cut_inds[0][0]]]
+        
+        for i in range(len(branch_cut_inds)-1): 
+            if len(u1[branch_cut_inds[i][0]:branch_cut_inds[i+1][0]])<=threshold:
+                pass
+            else:
+                ss_u1.append(u1[branch_cut_inds[i][0]:branch_cut_inds[i+1][0]])
+                ss_u2.append(u2[branch_cut_inds[i][0]:branch_cut_inds[i+1][0]])
+                p.append(par[branch_cut_inds[i][0]:branch_cut_inds[i+1][0]])
+        
+        try:
+            ss_u1.append(u1[branch_cut_inds[i+1][0]:-1]) # last branch
+            ss_u2.append(u2[branch_cut_inds[i+1][0]:-1])
+            p.append(par[branch_cut_inds[i+1][0]:-1])
+        except:
+            ss_u1.append(u1[branch_cut_inds[0][0]:-1]) # last branch
+            ss_u2.append(u2[branch_cut_inds[0][0]:-1])
+            p.append(par[branch_cut_inds[0][0]:-1])
+
+        
+        return p,ss_u1,ss_u2
+
+def load_allinfo_file(folder_load, filename):
+    par,x_ss,y_ss = allinfo_filereader_2var(folder_load,filename,threshold=5)
+    return par,x_ss,y_ss
+
+
 #%% Integrators
   
 def RK4_na_noisy(f,p,ICs,t0,dt,t_end, sigma=0, naFun = None,naFunParams = None):     # args: ODE system, parameters, initial conditions, starting time t0, dt, number of steps
@@ -294,4 +397,56 @@ def RK4_na_noisy_pos(f,p,ICs,t0,dt,t_end, sigma=0, naFun = None,naFunParams = No
                 x[i,:] = x_
 
         return np.vstack((t,x.T))
+
+#%% functions for the fokker-planck solver
+
+import enum
+from inspect import getfullargspec
+
+def value_to_vector(value, ndim, dtype=float):
+    """convert a value to a vector in ndim"""
+    value = np.asarray(value, dtype=dtype)
+    if value.ndim == 0:
+        vec = np.asarray(np.repeat(value, ndim), dtype=dtype)
+    else:
+        vec = np.asarray(value)
+        if vec.size != ndim:
+            raise ValueError(f'input vector ({value}) does not have the correct dimensions (ndim = {ndim})')
+
+    return vec
+
+def slice_idx(i, ndim, s0):
+    """return a boolean array for a ndim-1 slice along the i'th axis at value s0"""
+    idx = [slice(None)]*ndim
+    idx[i] = s0
+
+    return tuple(idx)
+
+def combine(*funcs):
+    """combine a collection of functions into a single function (for probability, potential, and force functions)"""
+    def combined_func(*args):
+        values = funcs[0](*args)
+        for func in funcs[1:]:
+            values += func(*args)
+
+        return values
+
+    return combined_func
+
+class boundary(enum.Enum):
+    """enum for the types ofboundary conditions"""
+    reflecting = enum.auto()
+    periodic   = enum.auto()
+
+def vectorize_force(f):
+    """decorator to vectorize a force function"""
+    ndim = len(getfullargspec(f).args)
+    signature = ','.join(['()']*ndim)
+    signature += '->(N)'
+
+    vec_f = np.vectorize(f, signature=signature)
+    def new_func(*args):
+        return np.rollaxis(vec_f(*args), axis=-1, start=0)
+
+    return new_func
 

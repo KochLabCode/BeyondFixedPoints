@@ -6,6 +6,7 @@ Created on Tue Apr  4 23:01:06 2023
 """
 
 import numpy as np
+import os
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pylab as pylab
@@ -34,7 +35,9 @@ params = {'legend.fontsize': 15,
 
 
 pylab.rcParams.update(params)
-
+import tkinter as tk
+from tkinter import simpledialog
+from functions import load_allinfo_file, plot_bif
 
 #%% normal form model equation (Eq. 1 in the main text)
 
@@ -384,8 +387,31 @@ def trapping_time_analytic(ll,ini,fin):
 
 
 #%% defining models and parameters
+
+# Create the main application window
+root = tk.Tk()
+root.withdraw()  # Hide the main window
+
+# Show the dialog box and get the input
+alpha = simpledialog.askstring("Input", "Please enter '\u03B1' value. Try 0.01 for ghost or -0.4 for saddle")
+# Check if the user provided input
+if alpha is not None:
+    print(f"The entered parameter value is: {alpha}")
+else:
+    print("No input provided")
+
+# Destroy the root window after getting the input
+root.destroy()
+
+alpha = float(alpha)
+
+## load and plot bifurcation diagram
+folder_load=os.path.join(os.getcwd()+'\\XPPAUT\\')
+filename='data_SN_normalform_allinfo'
+par,x_ss,y_ss= load_allinfo_file(folder_load,filename)
+plot_bif(par,x_ss,vline=alpha)
         
-alpha=-0.4 # for saddle fixed point    
+# alpha=-0.4 # for saddle fixed point    
 # alpha=0.01 # for ghost state
 
 para = [alpha]

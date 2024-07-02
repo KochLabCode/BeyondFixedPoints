@@ -22,6 +22,8 @@ params = {'legend.fontsize': 15,
           'ytick.labelsize':20}
 pylab.rcParams.update(params)
 
+import tkinter as tk
+from tkinter import simpledialog
 from quasi_potential_landscape import *
 
 def model_ghost(t, z , para):
@@ -71,8 +73,23 @@ in stem cell differentiation. Biophysical journal, 99:29–39.
 
 """
 time_point=0
-alpha=0.01
 
+# Create the main application window
+root = tk.Tk()
+root.withdraw()  # Hide the main window
+
+# Show the dialog box and get the input
+alpha = simpledialog.askstring("Input", "Please enter '\u03B1' value. Try 0.01 for ghost or -0.4 for saddle")
+# Check if the user provided input
+if alpha is not None:
+    print(f"The entered parameter value is: {alpha}")
+else:
+    print("No input provided")
+
+# Destroy the root window after getting the input
+root.destroy()
+
+alpha = float(alpha)
 input_params=[alpha]
 
 print('estimating quasi-potential landscape. This might take sometime.')
@@ -80,9 +97,12 @@ print('estimating quasi-potential landscape. This might take sometime.')
 ## change the model in the argument to plot potentials of different phase space objects.
 ## currently set to simulate ghost manifold using 'model_ghost' function.
 
-qpl=QuasiPotentialLandscape(time_point,model_ghost,input_params) # for ghost landscape
-# qpl=QuasiPotentialLandscape(time_point,model_saddle,input_params) # for saddle landscape
-
+if alpha>0:
+    qpl=QuasiPotentialLandscape(time_point,model_ghost,input_params) # for ghost landscape
+    azim=21;ele=-17
+else:
+    qpl=QuasiPotentialLandscape(time_point,model_saddle,input_params) # for saddle landscape
+    azim=-43;ele=25
 grid_pot,Pt=qpl.find_potential()  
  
 
@@ -99,7 +119,7 @@ plt.rcParams.update({'font.size': 10})
 surf = ax.plot_surface(Xpot,Ypot, U,  rstride=1, cstride=1, cmap='hot',alpha=0.3,
             linewidth=0.25,antialiased=True,edgecolor='k',vmin=np.nanmin(U),vmax=np.nanmax(U))
 ax.set_aspect('auto')
-ax.view_init(21,-17)
+ax.view_init(azim,ele)
 ax.set_xlabel('x')
 ax.set_ylabel('y')
 ax.set_zlabel('Quasi-potential')
