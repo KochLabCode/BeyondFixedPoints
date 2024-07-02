@@ -8,18 +8,9 @@
 
 import numpy as np
 from numpy.linalg import eig
-import cmath as cm
 import matplotlib.pyplot as plt
 import matplotlib.pylab as pylab
-from matplotlib import *
-from matplotlib.patches import Rectangle
-import sympy as sp
-from scipy.ndimage.morphology import binary_dilation
-import math as math
-from scipy.optimize import curve_fit
-from scipy.signal import find_peaks
-from scipy.interpolate import CubicSpline
-
+from matplotlib import colors
 # from numpy import *
 
 params = {'legend.fontsize': 15,
@@ -282,7 +273,7 @@ for k in eig_grid:
 if alpha>0:
     plt.figure()
     plt.plot(eig_trap_model3,t_trap_model3,t_trap_model_var3,color='k',marker='s',ls='None',markersize=5,label='numerical')
-    # plt.plot(eig_trap_model3,t_trap_theory,color='r',label='analytical')
+    plt.plot(eig_trap_model3,t_trap_theory,color='r',label='analytical')
     plt.xlabel(r'$\lambda_{g}^s$')
     plt.ylabel(r'piecewise trapping time $(\tau_i)$')
     plt.ylim(0,2.1)
@@ -303,7 +294,7 @@ if alpha<0:
     
     plt.figure()
     plt.plot(sn_numeric_eig,sn_numeric_trapping,color='k',marker='s',ls='None',markersize=5,label='numerical')
-    # plt.plot(sn_analytic_eig,sn_analytic_trapping,color='r',label='analytical')
+    plt.plot(sn_analytic_eig,sn_analytic_trapping,color='r',label='analytical')
     plt.xlabel(r'$\lambda_{max}^s$')
     plt.ylabel(r'piecewise trapping time $(\tau_i)$')
     plt.ylim(0,1.5)

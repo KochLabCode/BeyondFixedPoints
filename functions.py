@@ -13,9 +13,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import os
-# from dtaidistance import dtw_ndim
-# from dtaidistance import dtw
-# from dtaidistance import dtw_visualisation as dtwvis
+from dtaidistance import dtw_ndim
+from dtaidistance import dtw
+from dtaidistance import dtw_visualisation as dtwvis
 
 #%% Plotting functions
 
